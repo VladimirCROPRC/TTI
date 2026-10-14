@@ -24,7 +24,7 @@ Endpoint-ul public este declarat în `dist/config.js`; nu sunt incluse chei API.
 
 Testele de integrare rulează exclusiv împotriva API-ului local: inițializează schema și seed-ul cu `wrangler d1 execute ... --local`, pornește `wrangler dev --port 8787`, apoi rulează `node backend/test-api.mjs`. Baza locală este separată de cea de producție.
 
-Aplicație statică în română: OpenStreetMap / Esri World Imagery, un strat comun pentru cabluri și straturi independente pentru fiecare categorie de puncte din KMZ. Simbolurile PNG, culorile și grosimile traseelor sunt importate din KML. Click pe punct deschide fotografiile; click pe fotografie deschide galeria cu navigare prin săgeți și tastatură.
+Aplicație statică în română: OpenStreetMap / Mapbox Satellite, un strat comun pentru cabluri și straturi independente pentru fiecare categorie de puncte din KMZ. Simbolurile PNG, culorile și grosimile traseelor sunt importate din KML. Click pe punct deschide fotografiile; click pe fotografie deschide galeria cu navigare prin săgeți și tastatură.
 
 Date inițiale: 37 puncte, 42 trasee, 148 fotografii, 6 categorii. Fișierele foto sunt păstrate local în `dist/files/`, fără servicii externe pentru fotografii. Conținutul descrierilor este tratat ca text, nu ca HTML executabil.
 
@@ -41,3 +41,5 @@ Cu Python 3: `python scripts/import_kmz.py /cale/TTI.kmz`. Importatorul extrage 
 Publică directorul `dist` pe orice hosting static, inclusiv într-un subdirector. Nu sunt necesare chei API sau backend. Fotografiile devin accesibile persoanelor cu acces la site/repository. GitHub Pages nu este activat automat. Atribuirea furnizorilor este afișată pe hartă; pentru utilizare intensă configurează un furnizor de tile-uri adecvat politicilor OpenStreetMap: https://operations.osmfoundation.org/policies/tiles/.
 
 Designul actual folosește o interfață cartografică cu antet bleumarin și accente verzi. Site-ul de referință oroc.proconect.ro nu a putut fi accesat la implementare; potrivirea vizuală exactă rămâne de verificat.
+
+Mapbox Satellite primește tokenul public din endpoint-ul /map-config al backend-ului. Tokenul este configurat în Cloudflare ca MAPBOX_PUBLIC_TOKEN, fără a fi inclus în sursele GitHub. La mutarea site-ului pe un domeniu nou, adaugă domeniul în restricțiile URL ale tokenului Mapbox și în ALLOWED_ORIGINS ale backend-ului Cloudflare. Domeniul existent poate fi păstrat în perioada de tranziție.

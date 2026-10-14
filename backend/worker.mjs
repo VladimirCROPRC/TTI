@@ -25,6 +25,7 @@ async function route(request,env){
  if(request.method==='OPTIONS')return new Response(null,{status:204});
  const path=new URL(request.url).pathname;
  if(path==='/health')return json({ok:true});
+ if(path==='/map-config'&&request.method==='GET')return json({mapboxToken:env.MAPBOX_PUBLIC_TOKEN||''});
  if(path==='/cables'&&request.method==='GET'){
  const cables=(await env.DB.prepare('SELECT * FROM cables').all()).results,sections=(await env.DB.prepare('SELECT * FROM cable_sections ORDER BY sequence').all()).results;
  return json({cables:cables.map(c=>({...c,sections:sections.filter(s=>s.cable_id===c.id)}))});
