@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+const api='http://127.0.0.1:8787';
+const call=async(path,method='GET',body)=>{
+ const response=await fetch(api+path,{method,headers:{'X-TTI-Client':'web','Content-Type':'application/json','CF-Connecting-IP':'127.0.0.1'},...(body?{body:JSON.stringify(body)}:{})});
+ return response;
+};
+const body={id:crypto.randomUUID(),name:'Cablu test local',coordinates:[[46,23],[46.01,23.02],[46.02,23.03]],status:'Neprogramate',week:null};
+assert.equal((await call('/api/cables','POST',{...body,coordinates:[[46,23]]})).status,400);
+assert.equal((await call('/api/cables','POST',{...body,coordinates:[[91,23],[46,23]]})).status,400);
+assert.equal((await call('/api/cables','POST',{...body,status:'Patrulate',week:null})).status,400);
+assert.equal((await call('/api/cables','POST',body)).status,201);
+assert.equal((await call('/api/cables','POST',body)).status,200);
+assert.equal((await call('/api/cables','POST',{...body,name:'Conflict'})).status,409);
+let state=(await(await call('/api/cables')).json()).cables.find(c=>c.id===body.id);
+assert.deepEqual(state.coordinates,body.coordinates);assert.equal(state.name,body.name);
+const section={id:crypto.randomUUID(),status:'Patrulate - traseu diferit fata de documentatie',week:'2026-W42',start_pos:.5,end_pos:1.5,version:state.version};
+assert.equal((await call('/api/cables/'+body.id+'/sections','POST',{...section,end_pos:3})).status,400);
+assert.equal((await call('/api/cables/'+body.id+'/sections','POST',section)).status,201);
+state=(await(await call('/api/cables')).json()).cables.find(c=>c.id===body.id);
+assert.equal(state.sections[0].status,section.status);assert.equal(state.sections[0].week,section.week);
+console.log('Drawn cables: validation, persistence, retry, conflict, dynamic geometry and yellow partial patrol passed.');

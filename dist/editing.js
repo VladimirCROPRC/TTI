@@ -16,7 +16,7 @@ window.TTI={
   for(const f of this.all){const p=this.states.get(f.id);if(!p)continue;f.category=p.category;f.notes=p.notes;f.observations=p.observations||[];f.version=p.version;f.deleted=Boolean(p.deleted);f.photos=[...f.originalPhotos,...p.photos].filter(photo=>!(p.deletedPhotos||[]).includes(photo.src));f.style=this.styles.get(p.category)||f.style;}
   dataset.features=this.all.filter(f=>!f.deleted);await this.syncCables();this.offline=null;
  },
- async refresh(){await this.sync(data);rebuildLayers();for(const f of this.all){if(!records.has(f.id)&&f.type==='Point')records.set(f.id,pointMarker(f));}for(const f of data.features){const marker=records.get(f.id);if(f.type==='Point'&&marker){marker.setIcon(pointIcon(f));}else if(f.type==='LineString'&&marker){records.set(f.id,cableRecord(f));}}render();this.updateCounts();updateLayerGroups();},
+ async refresh(){await this.sync(data);rebuildLayers();for(const f of this.all){if(!records.has(f.id)&&f.type==='Point')records.set(f.id,pointMarker(f));}for(const f of data.features){const marker=records.get(f.id);if(f.type==='Point'&&marker){marker.setIcon(pointIcon(f));}else if(f.type==='LineString'){records.set(f.id,cableRecord(f));}}render();this.updateCounts();updateLayerGroups();},
  updateCounts(){document.querySelectorAll('.layer').forEach(label=>{const key=label.querySelector('input').dataset.key;label.querySelector('small').textContent=data.features.filter(f=>featureLayers(f).includes(key)).length;});},
  addEditor(f,content){
   if(f.type!=='Point')return;
@@ -41,7 +41,7 @@ window.TTI={
   const remove=el('button','Șterge punctul','delete-point');remove.onclick=()=>{if(!confirm('Ștergi punctul pentru toți utilizatorii? Poate fi restaurat din „Puncte șterse”.'))return;perform(async()=>{await this.request('/points/'+f.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes:f.notes||'',category:f.category,deleted:true,version:f.version})});await this.refresh();$('details').hidden=true;});};
   box.append(history,noteLabel,addNote,layerLabel,save,uploadLabel,el('small','JPEG, PNG sau WebP · maximum 10 MB / fotografie'),upload,msg,remove);content.insertBefore(box,content.querySelector('h3'));
  },
- setup(){this.setupCreation();
+ setup(){this.setupCreation();this.setupCableDrawing();
   const button=el('button','Puncte șterse','deleted-points');button.onclick=async()=>{try{await this.refresh();const deleted=this.all.filter(f=>f.deleted);const content=$('detail-content');content.replaceChildren(el('h2','Puncte șterse','detail-title'));$('details').hidden=false;if(!deleted.length)content.append(el('p','Nu există puncte șterse.'));for(const f of deleted){const row=el('div',undefined,'restore-row');row.append(el('p',(f.description.match(/Adresa:\s*([^\n]*)/)||[])[1]||f.name));const restore=el('button','Restaurează');restore.onclick=async()=>{restore.disabled=true;try{await this.request('/points/'+f.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes:f.notes||'',category:f.category,deleted:false,version:f.version})});await this.refresh();row.remove();}catch(e){alert(e.message);restore.disabled=false;}};row.append(restore);content.append(row);}}catch(e){alert(e.message);}};
   if(this.api)$('sidebar').insertBefore(button,$('sidebar').querySelector('footer'));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&this.api&&!this.busy&&$('details').hidden)this.refresh().catch(()=>{});});

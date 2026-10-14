@@ -38,7 +38,8 @@ async function route(request,env){
  if(path==='/map-config'&&request.method==='GET')return json({mapboxToken:env.MAPBOX_PUBLIC_TOKEN||''});
  if(path==='/cables'&&request.method==='GET'){
  const cables=(await env.DB.prepare('SELECT * FROM cables').all()).results,sections=(await env.DB.prepare('SELECT * FROM cable_sections ORDER BY sequence').all()).results;
- return json({cables:cables.map(c=>({...c,sections:sections.filter(s=>s.cable_id===c.id)}))});
+ const drawn=(await env.DB.prepare('SELECT * FROM drawn_cables').all()).results;
+ return json({cables:cables.map(c=>{const geometry=drawn.find(d=>d.id===c.id);return {...c,...(geometry?{name:geometry.name,coordinates:JSON.parse(geometry.coordinates)}:{}),sections:sections.filter(s=>s.cable_id===c.id)};})});
  }
  if(request.method==='GET'&&path==='/points'){
  const {results}=await env.DB.prepare('SELECT * FROM points').all();
@@ -55,9 +56,23 @@ async function route(request,env){
  return new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'X-Content-Type-Options':'nosniff'}});
  }
  if(request.headers.get('X-TTI-Client')!=='web')return json({error:'Cerere nepermisă.'},403);
+ if(path==='/cables'&&request.method==='POST'){
+ const b=await request.json();
+ if(typeof b.id!=='string'||!/^[a-f0-9-]{36}$/.test(b.id)||typeof b.name!=='string'||!b.name.trim()||b.name.length>200||!Array.isArray(b.coordinates)||b.coordinates.length<2||b.coordinates.length>2000||b.coordinates.some(p=>!Array.isArray(p)||p.length!==2||!Number.isFinite(p[0])||Math.abs(p[0])>90||!Number.isFinite(p[1])||Math.abs(p[1])>180)||!b.coordinates.some(p=>p[0]!==b.coordinates[0][0]||p[1]!==b.coordinates[0][1])||!['Neprogramate','Patrulate','Patrulate - traseu diferit fata de documentatie','Programate pentru patrulare'].includes(b.status)||(b.status!=='Neprogramate'&&!validWeek(b.week)))return json({error:'Introdu numele, un traseu valid cu minimum două poziții și săptămâna stratului ales.'},400);
+ const coordinates=JSON.stringify(b.coordinates),name=b.name.trim();
+ const prior=await env.DB.prepare('SELECT * FROM drawn_cables WHERE id=?').bind(b.id).first();
+ if(prior)return prior.coordinates===coordinates&&prior.name===name?json({id:b.id}):json({error:'Identificator reutilizat.'},409);
+ if(await env.DB.prepare('SELECT id FROM cables WHERE id=?').bind(b.id).first())return json({error:'Identificator reutilizat.'},409);
+ await env.DB.batch([
+ env.DB.prepare('INSERT INTO cables(id,status,scheduled_week,patrolled_week) VALUES(?,?,?,?)').bind(b.id,b.status,b.status==='Programate pentru patrulare'?b.week:null,b.status.startsWith('Patrulate')?b.week:null),
+ env.DB.prepare('INSERT INTO drawn_cables(id,name,coordinates) VALUES(?,?,?)').bind(b.id,name,coordinates)
+ ]);return json({id:b.id},201);
+ }
  const sectionMatch=path.match(/^\/cables\/([^/]+)\/sections$/);
  if(sectionMatch&&request.method==='POST'){
- const b=await request.json(),cableId=sectionMatch[1],max=(manifest.cableVertexCounts?.[cableId]||0)-1;
+ const b=await request.json(),cableId=sectionMatch[1];
+ const drawn=manifest.cableVertexCounts?.[cableId]?null:await env.DB.prepare('SELECT coordinates FROM drawn_cables WHERE id=?').bind(cableId).first();
+ const max=(manifest.cableVertexCounts?.[cableId]||(drawn?JSON.parse(drawn.coordinates).length:0))-1;
  if(!['Patrulate','Patrulate - traseu diferit fata de documentatie','Programate pentru patrulare'].includes(b.status)||!validWeek(b.week)||!Number.isInteger(b.version)||typeof b.id!=='string'||!/^[a-f0-9-]{36}$/.test(b.id)||!Number.isFinite(b.start_pos)||!Number.isFinite(b.end_pos)||b.start_pos<0||b.end_pos<0||b.start_pos>max||b.end_pos>max||Math.abs(b.end_pos-b.start_pos)<0.000001)return json({error:'Selectează două poziții distincte pe traseu și săptămâna.'},400);
  const prior=await env.DB.prepare('SELECT * FROM cable_sections WHERE id=?').bind(b.id).first();if(prior){if(prior.cable_id!==cableId||prior.status!==b.status||prior.week!==b.week||prior.start_pos!==b.start_pos||prior.end_pos!==b.end_pos)return json({error:'Identificator reutilizat.'},409);return json(prior);}
  const inserted=await env.DB.batch([

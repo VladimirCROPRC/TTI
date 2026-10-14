@@ -1,0 +1,22 @@
+TTI.setupCableDrawing=function(){
+ const button=el('button','✎ Desenează cablu','add-point');$('sidebar').insertBefore(button,$('sidebar').firstChild);
+ const toolbar=el('section',undefined,'cable-draw-toolbar'),info=el('span'),undo=el('button','Înapoi'),finish=el('button','Finalizează traseul'),abort=el('button','Anulează');
+ toolbar.append(info,undo,finish,abort);toolbar.hidden=true;document.querySelector('.map-wrap').append(toolbar);
+ let vertices=[],line=null,marks=[],active=false,id=null;
+ const cleanup=()=>{active=false;this.cablePicking=false;map.getContainer().classList.remove('placing-point');toolbar.hidden=true;button.textContent='✎ Desenează cablu';if(line)map.removeLayer(line);line=null;marks.forEach(m=>map.removeLayer(m));marks=[];};
+ const cancel=()=>{cleanup();vertices=[];id=null;};
+ const draw=()=>{if(line)map.removeLayer(line);marks.forEach(m=>map.removeLayer(m));marks=vertices.map(p=>L.circleMarker(p,{radius:5,color:'#102735',fillColor:'#fff',fillOpacity:1,interactive:false}).addTo(map));line=vertices.length>1?L.polyline(vertices,{color:'#ff00ff',weight:4,interactive:false}).addTo(map):null;info.textContent=vertices.length+' puncte · Click pe hartă pentru continuare';undo.disabled=!vertices.length;finish.disabled=vertices.length<2;};
+ button.onclick=()=>{if(active){cancel();return;}this.cancelCableSelection();this.cancelPointCreation?.();vertices=[];id=crypto.randomUUID();active=true;this.cablePicking=true;this.cancelSelection=cancel;toolbar.hidden=false;$('details').hidden=true;button.textContent='Anulează desenarea';map.getContainer().classList.add('placing-point');if(innerWidth<=650)$('sidebar').classList.add('mobile-hidden');draw();};
+ map.on('click',e=>{if(!active)return;if(vertices.length>=2000){info.textContent='Maximum 2000 de puncte. Finalizează traseul.';return;}const p=[e.latlng.lat,e.latlng.lng],last=vertices.at(-1);if(last&&last[0]===p[0]&&last[1]===p[1])return;vertices.push(p);draw();});
+ undo.onclick=()=>{vertices.pop();draw();};abort.onclick=cancel;
+ finish.onclick=()=>{if(vertices.length<2)return;active=false;this.cablePicking=false;toolbar.hidden=true;map.getContainer().classList.remove('placing-point');$('details').hidden=false;selected=null;
+ const content=$('detail-content');content.replaceChildren(el('h2','Cablu nou','detail-title'),el('p',vertices.length+' puncte în traseu'));
+ const nameLabel=el('label','Nume cablu'),name=el('input');name.required=true;name.maxLength=200;nameLabel.append(name);
+ const layerLabel=el('label','Strat'),layer=el('select');for(const status of cableStatuses){const option=el('option',status);option.value=status;option.selected=status==='Neprogramate';layer.append(option);}layerLabel.append(layer);
+ const weekLabel=el('label','Săptămâna'),week=el('input');week.type='week';weekLabel.append(week);const update=()=>{week.required=layer.value!=='Neprogramate';weekLabel.hidden=!week.required;if(line)line.setStyle({color:cableColors[layer.value]});};layer.onchange=update;update();
+ const message=el('p',undefined,'save-status'),save=el('button','Salvează cablul','save-point'),back=el('button','Continuă desenarea'),close=el('button','Anulează');
+ back.onclick=()=>{$('details').hidden=true;active=true;this.cablePicking=true;toolbar.hidden=false;map.getContainer().classList.add('placing-point');draw();};close.onclick=()=>{cancel();$('details').hidden=true;};
+ save.onclick=async()=>{if(this.busy||!name.reportValidity()||!week.reportValidity())return;this.busy=true;save.disabled=back.disabled=close.disabled=true;try{await this.request('/cables',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name:name.value,coordinates:vertices,status:layer.value,week:week.value||null})});const savedId=id;cancel();$('search').value='';await this.refresh();focus(this.all.find(f=>f.id===savedId));}catch(e){message.textContent=e.message;}finally{this.busy=false;save.disabled=back.disabled=close.disabled=false;}};
+ const form=el('section',undefined,'point-editor');form.append(nameLabel,layerLabel,weekLabel,save,back,close,message);content.append(form);
+ };
+};
