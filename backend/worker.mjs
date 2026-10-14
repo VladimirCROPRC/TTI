@@ -1,5 +1,6 @@
 import manifest from './manifest.json' with {type:'json'};
 import {importRoutes,historyStatement} from './imports.mjs';
+import {photoLocation} from './photo-location.mjs';
 const json=(value,status=200)=>Response.json(value,{status});
 const categories=new Set(manifest.categories),ids=new Set(manifest.ids);
 const validCategory=c=>categories.has(c)||(typeof c==='string'&&/^TTI \(1\)\/Importate\/[a-f0-9-]{36}$/.test(c))||(typeof c==='string'&&(/^TTI \(1\)\/Tichete\/[A-Za-z0-9][A-Za-z0-9_. -]{0,99}$/.test(c)||/^TTI \(1\)\/(?:Pichetare|Predari amplasament)\/(?:Solicitate|Programate|Pending|Finalizate)$/.test(c)));
@@ -57,6 +58,7 @@ async function route(request,env){
  return new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'X-Content-Type-Options':'nosniff'}});
  }
  if(request.headers.get('X-TTI-Client')!=='web')return json({error:'Cerere nepermisă.'},403);
+ if(path==='/photo-location'&&request.method==='POST')return photoLocation(request,env,imageType);
  const imported=await importRoutes(request,env,path);if(imported)return imported;
  if(path==='/cables'&&request.method==='POST'){
  const b=await request.json();

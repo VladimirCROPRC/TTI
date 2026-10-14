@@ -15,3 +15,5 @@ jobs:
           node-version: '22'
       - run: node --check backend/worker.mjs
       - run: node backend/test-vpn.mjs
+      - run: node --check dist/creation.js
+      - run: node backend/test-photo-location.mjs

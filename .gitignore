@@ -2,3 +2,5 @@ node_modules/
 .openai/
 *.zip
 .wrangler/
+.dev.vars
+.env*
