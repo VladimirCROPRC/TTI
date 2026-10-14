@@ -2,6 +2,12 @@
 
 ## Editare comună
 
+„Adaugă punct” permite alegerea poziției prin click pe hartă, apoi alegerea stratului. Pentru „Tichete” se introduce numărul tichetului; sublayerul este creat automat sau reutilizat dacă numărul există deja. Numele și adresa sunt opționale. Punctele noi, coordonatele și categoriile lor se salvează în D1 și sunt comune tuturor utilizatorilor.
+
+Fiecare fotografie are butonul „Șterge fotografia”. Ștergerea este înregistrată în D1 și elimină fotografia din galeria comună, inclusiv pentru imaginile importate din KMZ. Fișierele originale din GitHub și obiectele R2 sunt păstrate pentru recuperare administrativă; acest control nu este o ștergere fizică a fișierului.
+
+Pentru bazele existente, migrarea `backend/new-points.sql` adaugă coloanele și tabela pentru fotografii eliminate. Se execută o singură dată. Pentru o bază nouă, schema completă este în `backend/schema.sql`.
+
 Observațiile sunt o listă cu înregistrări distincte, cele mai noi primele. „Adaugă observația” salvează textul și data/ora serverului, afișate în fusul Europe/Bucharest. Salvarea stratului nu adaugă și nu rescrie observațiile. Reîncercarea aceleiași cereri nu creează duplicate. Migrarea `backend/observations.sql` păstrează textele vechi și le marchează cu data ultimei actualizări a punctului, deoarece data originală a observației nu era stocată separat.
 
 În fereastra fiecărui punct poți salva observații, muta punctul pe alt strat, încărca fotografii JPEG/PNG/WebP (maximum 10 MB fiecare) și șterge punctul. Punctele șterse se restaurează din butonul „Puncte șterse”. Fotografiile originale rămân în repository; fotografiile noi sunt în Cloudflare R2. Observațiile, stratul și ștergerile se salvează în Cloudflare D1 prin Worker-ul `tti-api`.

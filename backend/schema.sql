@@ -1,7 +1,8 @@
 CREATE TABLE IF NOT EXISTS points (
  id TEXT PRIMARY KEY, category TEXT NOT NULL, notes TEXT NOT NULL DEFAULT '',
  deleted INTEGER NOT NULL DEFAULT 0, version INTEGER NOT NULL DEFAULT 0,
- updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ latitude REAL, longitude REAL, name TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS photos (
  id TEXT PRIMARY KEY, point_id TEXT NOT NULL REFERENCES points(id),
@@ -12,3 +13,7 @@ CREATE TABLE IF NOT EXISTS observations (
  text TEXT NOT NULL, created_at TEXT NOT NULL, legacy INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS observations_point_date ON observations(point_id,created_at);
+CREATE TABLE IF NOT EXISTS deleted_photos (
+ point_id TEXT NOT NULL REFERENCES points(id), src TEXT NOT NULL,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(point_id,src)
+);
