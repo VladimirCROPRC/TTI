@@ -18,6 +18,7 @@ export default {async fetch(request,env){
  const clientIP=request.headers.get('CF-Connecting-IP');
  if(!env.ALLOWED_CLIENT_IP||clientIP!==env.ALLOWED_CLIENT_IP)return new Response('Acces permis doar prin VPN-ul WireGuard.',{status:403,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});
  const url=new URL(request.url);
+ if(url.protocol==='http:'){url.protocol='https:';return Response.redirect(url.toString(),301);}
  if(url.pathname.startsWith('/api/')){url.pathname=url.pathname.slice(4);request=new Request(url,request);}
  else if(env.ASSETS&&!/^\/(health|map-config|points|cables|photos)(\/|$)/.test(url.pathname)){
   const response=await env.ASSETS.fetch(request);
