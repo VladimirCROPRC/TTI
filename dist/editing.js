@@ -16,7 +16,7 @@ window.TTI={
   for(const f of this.all){const p=this.states.get(f.id);if(!p)continue;f.category=p.category;f.notes=p.notes;f.observations=p.observations||[];f.version=p.version;f.deleted=Boolean(p.deleted);f.photos=[...f.originalPhotos,...p.photos];f.style=this.styles.get(p.category)||f.style;}
   dataset.features=this.all.filter(f=>!f.deleted);this.offline=null;
  },
- async refresh(){await this.sync(data);for(const f of data.features){const marker=records.get(f.id);if(f.type==='Point'&&marker){const size=32*(f.style.scale||1);marker.setIcon(L.icon({iconUrl:f.style.icon,iconSize:[size,size],iconAnchor:[size/2,size/2]}));}}render();this.updateCounts();},
+ async refresh(){await this.sync(data);for(const f of data.features){const marker=records.get(f.id);if(f.type==='Point'&&marker){const size=32*(f.style.scale||1);marker.setIcon(L.icon({iconUrl:f.style.icon,iconSize:[size,size],iconAnchor:[size/2,size/2]}));}}render();this.updateCounts();updateLayerGroups();},
  updateCounts(){document.querySelectorAll('.layer').forEach(label=>{const key=label.querySelector('input').dataset.key;label.querySelector('small').textContent=data.features.filter(f=>(f.type==='LineString'?'Cabluri':f.category)===key).length;});},
  addEditor(f,content){
   if(f.type!=='Point')return;

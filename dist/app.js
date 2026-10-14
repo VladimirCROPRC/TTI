@@ -10,7 +10,7 @@ function matchesLocation(f,q){
 const $=id=>document.getElementById(id);
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 let map,data,base,selected,photoIndex=0;const groups=new Map(),records=new Map(),enabled=new Map();
-const short=name=>name.replace(/^TTI \(1\)\//,'');
+const short=name=>name.replace(/^TTI \(1\)\//,'').replace(/^Tikete(?=\/|$)/,'Tichete');
 function asset(path){return path.startsWith('files/')&&!path.includes('..')?path:null;}
 function image(path,alt){const n=el('img');n.src=TTI.photoUrl(asset(path)||path);n.alt=alt;n.loading='lazy';return n;}
 function toggleCategory(key,on){enabled.set(key,on);render();}
@@ -33,6 +33,6 @@ async function init(){try{if(!window.L)throw Error('Biblioteca hărții nu s-a �
  for(const key of ['osm','satellite'])$(key).onclick=()=>{map.removeLayer(base);base=bases[key].addTo(map);for(const k of ['osm','satellite']){$(k).classList.toggle('active',k===key);$(k).setAttribute('aria-pressed',String(k===key));}};
  const keys=['Cabluri',...data.categories];for(const key of keys){groups.set(key,L.featureGroup().addTo(map));enabled.set(key,true);const features=data.features.filter(f=>(f.type==='LineString'?'Cabluri':f.category)===key);const label=el('label',undefined,'layer');const check=el('input');check.type='checkbox';check.checked=true;check.dataset.key=key;check.onchange=()=>toggleCategory(key,check.checked);label.append(check);const icon=features[0]?.style.icon;if(key==='Cabluri')label.append(el('i',undefined,'line-symbol'));else if(asset(icon))label.append(image(icon,''));label.append(el('span',short(key)),el('small',String(features.length)));$('layers').append(label);}
  for(const f of TTI.all){let r;if(f.type==='Point'){const s=f.style, size=32*(s.scale||1),h=s.hotspot||{};let anchor=[size/2,size];if(h.xunits==='fraction')anchor[0]=Number(h.x)*size;if(h.yunits==='fraction')anchor[1]=(1-Number(h.y))*size;r=L.marker(f.coordinates,{title:f.name,icon:s.icon?L.icon({iconUrl:asset(s.icon)||s.icon,iconSize:[size,size],iconAnchor:anchor}):new L.Icon.Default()});}else r=L.polyline(f.coordinates,{color:f.style.color,weight:f.style.width,opacity:f.style.opacity});r.bindTooltip(el('span',f.name));r.on('click',()=>show(f));records.set(f.id,r);}
- render();fit();TTI.setup();$('search').oninput=render;$('fit').onclick=fit;$('all').onclick=()=>{const on=![...enabled.values()].some(Boolean);enabled.forEach((_,k)=>enabled.set(k,on));render();};
+ groupLayerControls();render();fit();TTI.setup();$('search').oninput=render;$('fit').onclick=fit;$('all').onclick=()=>{const on=![...enabled.values()].some(Boolean);enabled.forEach((_,k)=>enabled.set(k,on));render();};
  }catch(e){$('status').textContent=`Eroare: ${e.message} Reîncarcă pagina.`;console.error(e);}}
 $('close-details').onclick=()=>{$('details').hidden=true;};$('close-viewer').onclick=()=>$('viewer').close();$('prev').onclick=()=>openPhoto(photoIndex-1);$('next').onclick=()=>openPhoto(photoIndex+1);$('viewer').addEventListener('keydown',e=>{if(e.key==='ArrowLeft')openPhoto(photoIndex-1);if(e.key==='ArrowRight')openPhoto(photoIndex+1);});$('menu').onclick=()=>$('sidebar').classList.toggle('mobile-hidden');if(innerWidth<=650)$('sidebar').classList.add('mobile-hidden');init();
