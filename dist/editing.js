@@ -16,8 +16,8 @@ window.TTI={
   for(const f of this.all){const p=this.states.get(f.id);if(!p)continue;f.category=p.category;f.notes=p.notes;f.observations=p.observations||[];f.version=p.version;f.deleted=Boolean(p.deleted);f.photos=[...f.originalPhotos,...p.photos].filter(photo=>!(p.deletedPhotos||[]).includes(photo.src));f.style=this.styles.get(p.category)||f.style;}
   dataset.features=this.all.filter(f=>!f.deleted);await this.syncCables();this.offline=null;
  },
- async refresh(){await this.sync(data);rebuildLayers();for(const f of this.all){if(!records.has(f.id)&&f.type==='Point')records.set(f.id,pointMarker(f));}for(const f of data.features){const marker=records.get(f.id);if(f.type==='Point'&&marker){marker.setIcon(pointIcon(f));}else if(f.type==='LineString'&&marker){marker.setStyle({color:f.style.color});}}render();this.updateCounts();updateLayerGroups();},
- updateCounts(){document.querySelectorAll('.layer').forEach(label=>{const key=label.querySelector('input').dataset.key;label.querySelector('small').textContent=data.features.filter(f=>featureLayer(f)===key).length;});},
+ async refresh(){await this.sync(data);rebuildLayers();for(const f of this.all){if(!records.has(f.id)&&f.type==='Point')records.set(f.id,pointMarker(f));}for(const f of data.features){const marker=records.get(f.id);if(f.type==='Point'&&marker){marker.setIcon(pointIcon(f));}else if(f.type==='LineString'&&marker){records.set(f.id,cableRecord(f));}}render();this.updateCounts();updateLayerGroups();},
+ updateCounts(){document.querySelectorAll('.layer').forEach(label=>{const key=label.querySelector('input').dataset.key;label.querySelector('small').textContent=data.features.filter(f=>featureLayers(f).includes(key)).length;});},
  addEditor(f,content){
   if(f.type!=='Point')return;
   const box=el('section',undefined,'point-editor');box.append(el('h3','Editează punctul'));

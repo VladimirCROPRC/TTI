@@ -20,16 +20,3 @@ TTI.preparePlanning=function(dataset){
  for(const f of this.all){if(f.type==='Point')f.category=normalizeOperational(f.category);else{f.originalStyle={...f.style};f.cable={status:f.style.color==='#55ff7f'?'Patrulate':'Neprogramate',scheduled_week:null,patrolled_week:null,version:0};}}
 };
 TTI.syncCables=async function(){const result=await this.request('/cables');for(const state of result.cables){const f=this.all.find(f=>f.id===state.id&&f.type==='LineString');if(f){f.cable=state;f.style={...f.originalStyle,color:cableColors[state.status]};}}};
-TTI.addCableEditor=function(f,content){
- content.querySelector('.detail-category').textContent=featureLayer(f);
- const block=el('section',undefined,'point-editor');block.append(el('h3','Patrulare traseu'));
- const state=f.cable;
- block.append(el('p','Săptămână programată: '+weekLabel(state.scheduled_week)),el('p','Săptămână patrulată: '+weekLabel(state.patrolled_week)));
- if(this.offline||!this.api){block.append(el('p','Salvarea comună este momentan indisponibilă.'));content.insertBefore(block,content.querySelector('h3'));return;}
- const layerLabel=el('label','Strat cablu'),select=el('select');for(const status of cableStatuses){const o=el('option',status);o.value=status;o.selected=status===state.status;select.append(o);}layerLabel.append(select);
- const scheduledLabel=el('label','Săptămâna programării'),scheduled=el('input');scheduled.type='week';scheduled.value=state.scheduled_week||'';scheduledLabel.append(scheduled);
- const patrolLabel=el('label','Săptămâna patrulării'),patrolled=el('input');patrolled.type='week';patrolled.value=state.patrolled_week||'';patrolLabel.append(patrolled);
- const update=()=>{scheduled.required=select.value==='Programate pentru patrulare';patrolled.required=select.value==='Patrulate';};select.onchange=update;update();
- const message=el('p',undefined,'save-status'),save=el('button','Salvează traseul','save-point');save.onclick=async()=>{if(this.busy)return;if(!scheduled.reportValidity()||!patrolled.reportValidity())return;this.busy=true;save.disabled=true;try{await this.request('/cables/'+f.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:select.value,scheduled_week:scheduled.value||null,patrolled_week:patrolled.value||null,version:state.version})});await this.refresh();enabled.set(featureLayer(f),true);render();show(f);}catch(error){message.textContent=error.message;const reload=el('button','Reîncarcă traseul');reload.onclick=async()=>{await this.refresh();show(f);};block.append(reload);}finally{this.busy=false;save.disabled=false;}};
- block.append(layerLabel,scheduledLabel,patrolLabel,save,message);content.insertBefore(block,content.querySelector('h3'));
-};

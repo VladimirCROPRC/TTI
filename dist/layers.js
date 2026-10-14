@@ -20,6 +20,6 @@ function updateLayerGroups(){
  document.querySelectorAll('.layer-group').forEach(section=>{
   const checks=[...section.querySelectorAll('.layer input')];const active=checks.filter(n=>enabled.get(n.dataset.key)).length;
   const check=section.querySelector('.group-check');check.checked=active===checks.length;check.indeterminate=active>0&&active<checks.length;
-  section.querySelector('.group-count').textContent=checks.reduce((n,c)=>n+data.features.filter(f=>featureLayer(f)===c.dataset.key).length,0);
+  section.querySelector('.group-count').textContent=data.features.filter(f=>checks.some(c=>featureLayers(f).includes(c.dataset.key))).length;
  });
 }

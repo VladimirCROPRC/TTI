@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS cable_sections (
+ sequence INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
+ cable_id TEXT NOT NULL REFERENCES cables(id), status TEXT NOT NULL,
+ start_pos REAL NOT NULL, end_pos REAL NOT NULL, week TEXT NOT NULL,
+ created_at TEXT NOT NULL
+);

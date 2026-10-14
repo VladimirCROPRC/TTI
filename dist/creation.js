@@ -3,7 +3,7 @@ function rebuildLayers(){
  const collapsed=new Set([...document.querySelectorAll('.layer-group')].filter(s=>s.querySelector('.layer-group-children').hidden).map(s=>s.dataset.prefix));
  $('layers').replaceChildren();for(const key of [...cableStatuses.map(status=>'Cabluri/'+status),...data.categories]){
  if(!groups.has(key)){groups.set(key,L.featureGroup().addTo(map));enabled.set(key,true);}
- const features=data.features.filter(f=>featureLayer(f)===key),label=el('label',undefined,'layer'),check=el('input');check.type='checkbox';check.checked=enabled.get(key);check.dataset.key=key;check.onchange=()=>toggleCategory(key,check.checked);label.append(check);
+ const features=data.features.filter(f=>featureLayers(f).includes(key)),label=el('label',undefined,'layer'),check=el('input');check.type='checkbox';check.checked=enabled.get(key);check.dataset.key=key;check.onchange=()=>toggleCategory(key,check.checked);label.append(check);
  if(key.startsWith('Cabluri/')){const swatch=el('i',undefined,'line-symbol');swatch.style.background=cableColors[key.slice(8)];label.append(swatch);}else{const style=TTI.styles.get(key)||TTI.ticketStyle();if(style?.icon){const icon=el('span',undefined,'layer-marker');icon.append(image(style.icon,''));const symbol=statusSymbol(key);if(symbol)icon.append(el('b',symbol,'status-symbol'));label.append(icon);}}
  label.append(el('span',short(key),'layer-name'),el('small',String(features.length)));$('layers').append(label);
  }groupLayerControls();for(const section of document.querySelectorAll('.layer-group'))if(collapsed.has(section.dataset.prefix))section.querySelector('.layer-group-heading button').click();
@@ -13,7 +13,7 @@ TTI.deletePhoto=async function(f,p){if(this.busy||!confirm('Ștergi această fot
 TTI.setupCreation=function(){
  const button=el('button','＋ Adaugă punct','add-point');$('sidebar').insertBefore(button,$('sidebar').firstChild);
  let picking=false,draft=null;const cancel=()=>{picking=false;button.textContent='＋ Adaugă punct';map.getContainer().classList.remove('placing-point');if(draft){map.removeLayer(draft);draft=null;}};
- button.onclick=()=>{if(picking){cancel();return;}picking=true;button.textContent='Anulează adăugarea';map.getContainer().classList.add('placing-point');$('status').textContent='Click pe hartă pentru poziția punctului nou.';if(innerWidth<=650)$('sidebar').classList.add('mobile-hidden');};
+ button.onclick=()=>{this.cancelCableSelection();if(picking){cancel();return;}picking=true;button.textContent='Anulează adăugarea';map.getContainer().classList.add('placing-point');$('status').textContent='Click pe hartă pentru poziția punctului nou.';if(innerWidth<=650)$('sidebar').classList.add('mobile-hidden');};
  map.on('click',e=>{if(!picking)return;if(draft)map.removeLayer(draft);draft=L.circleMarker(e.latlng,{radius:9,color:'#168d7b',fillOpacity:1}).addTo(map);const coords=e.latlng;selected=null;$('details').hidden=false;const content=$('detail-content');content.replaceChildren(el('h2','Punct nou','detail-title'),el('p',`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`));
  const nameLabel=el('label','Nume (opțional)'),name=el('input');name.maxLength=200;nameLabel.append(name);
  const addressLabel=el('label','Adresă (opțional)'),address=el('input');address.maxLength=500;addressLabel.append(address);

@@ -2,6 +2,8 @@
 
 ## Editare comună
 
+Patrularea și programarea se pot salva pe porțiuni de cablu. Din popup alege starea, săptămâna și „Selectează START și FINISH pe hartă”, apoi două poziții pe traseu. Pozițiile se fixează pe geometria cablului, inclusiv între vârfurile KML; porțiunea aleasă are previzualizare și marcaje. „Tot cablul” selectează întregul traseu. Înregistrările sunt comune, fiecare cu START, FINISH și săptămână. Restul traseului își păstrează starea, iar la suprapuneri cea mai recentă înregistrare determină culoarea zonei comune. Istoricul înregistrărilor rămâne în popup. Un cablu poate apărea în mai multe sublayere simultan; fiecare bifă controlează doar porțiunile sale din starea respectivă. Numărul din grupul Cabluri reprezintă trasee distincte, nu suma sublayerelor.
+
 Pichetare și Predări de amplasament au sublayerele Solicitate, Programate, Pending și Finalizate. Punctele existente au fost migrate în Finalizate. Pictograma păstrează imaginea colorată originală și primește un simbol de stare (+, calendar, clepsidră sau bifă).
 
 Cablurile au stările Patrulate (verde), Programate pentru patrulare (albastru) și Neprogramate (roz). Starea și săptămânile se modifică din popup. Săptămânile se stochează separat în format ISO `YYYY-Www`: una pentru programare și alta pentru patrularea efectivă. Trecerea între stări păstrează ambele valori. Pentru programare/patrulare se cere săptămâna corespunzătoare. Traseele verzi existente au fost inițial încadrate ca Patrulate fără o săptămână inventată; aceasta poate fi completată manual. Migrarea `backend/cables.sql` și inițializarea `backend/cables-seed.sql` păstrează datele existente.

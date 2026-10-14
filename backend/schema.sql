@@ -22,3 +22,9 @@ CREATE TABLE IF NOT EXISTS cables (
  scheduled_week TEXT, patrolled_week TEXT, version INTEGER NOT NULL DEFAULT 0,
  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS cable_sections (
+ sequence INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
+ cable_id TEXT NOT NULL REFERENCES cables(id), status TEXT NOT NULL,
+ start_pos REAL NOT NULL, end_pos REAL NOT NULL, week TEXT NOT NULL,
+ created_at TEXT NOT NULL
+);

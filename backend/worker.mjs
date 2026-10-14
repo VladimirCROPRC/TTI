@@ -25,7 +25,10 @@ async function route(request,env){
  if(request.method==='OPTIONS')return new Response(null,{status:204});
  const path=new URL(request.url).pathname;
  if(path==='/health')return json({ok:true});
- if(path==='/cables'&&request.method==='GET')return json({cables:(await env.DB.prepare('SELECT * FROM cables').all()).results});
+ if(path==='/cables'&&request.method==='GET'){
+ const cables=(await env.DB.prepare('SELECT * FROM cables').all()).results,sections=(await env.DB.prepare('SELECT * FROM cable_sections ORDER BY sequence').all()).results;
+ return json({cables:cables.map(c=>({...c,sections:sections.filter(s=>s.cable_id===c.id)}))});
+ }
  if(request.method==='GET'&&path==='/points'){
  const {results}=await env.DB.prepare('SELECT * FROM points').all();
  const photos=await env.DB.prepare('SELECT id, point_id, caption FROM photos ORDER BY created_at,id').all();
@@ -41,6 +44,18 @@ async function route(request,env){
  return new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'X-Content-Type-Options':'nosniff'}});
  }
  if(request.headers.get('X-TTI-Client')!=='web')return json({error:'Cerere nepermisă.'},403);
+ const sectionMatch=path.match(/^\/cables\/([^/]+)\/sections$/);
+ if(sectionMatch&&request.method==='POST'){
+ const b=await request.json(),cableId=sectionMatch[1],max=(manifest.cableVertexCounts?.[cableId]||0)-1;
+ if(!['Patrulate','Programate pentru patrulare'].includes(b.status)||!validWeek(b.week)||!Number.isInteger(b.version)||typeof b.id!=='string'||!/^[a-f0-9-]{36}$/.test(b.id)||!Number.isFinite(b.start_pos)||!Number.isFinite(b.end_pos)||b.start_pos<0||b.end_pos<0||b.start_pos>max||b.end_pos>max||Math.abs(b.end_pos-b.start_pos)<0.000001)return json({error:'Selectează două poziții distincte pe traseu și săptămâna.'},400);
+ const prior=await env.DB.prepare('SELECT * FROM cable_sections WHERE id=?').bind(b.id).first();if(prior){if(prior.cable_id!==cableId||prior.status!==b.status||prior.week!==b.week||prior.start_pos!==b.start_pos||prior.end_pos!==b.end_pos)return json({error:'Identificator reutilizat.'},409);return json(prior);}
+ const inserted=await env.DB.batch([
+ env.DB.prepare('INSERT INTO cable_sections(id,cable_id,status,start_pos,end_pos,week,created_at) SELECT ?,id,?,?,?,?,? FROM cables WHERE id=? AND version=?').bind(b.id,b.status,b.start_pos,b.end_pos,b.week,new Date().toISOString(),cableId,b.version),
+ env.DB.prepare('UPDATE cables SET version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM cable_sections WHERE id=?)').bind(cableId,b.version,b.id)
+ ]);
+ if(!inserted[0].meta.changes)return json({error:'Traseul a fost modificat de alt utilizator. Reîncarcă datele.'},409);
+ return json(await env.DB.prepare('SELECT * FROM cable_sections WHERE id=?').bind(b.id).first(),201);
+ }
  const cableMatch=path.match(/^\/cables\/([^/]+)$/);
  if(cableMatch&&request.method==='PATCH'){
  const b=await request.json();

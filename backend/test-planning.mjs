@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {validWeek} from './worker.mjs';
 assert(validWeek('2026-W53'));assert(!validWeek('2025-W53'));assert(!validWeek('2026-W00'));assert(!validWeek('2026-W54'));assert(!validWeek('2026-10-14'));
 const api='http://127.0.0.1:8787';
@@ -14,6 +15,7 @@ assert.equal((await save({...b,status:'Patrulate',version:c.version})).status,40
 const patrol=await save({...b,status:'Patrulate',patrolled_week:'2026-W44',version:c.version});assert.equal(patrol.status,200);c=await patrol.json();assert.equal(c.scheduled_week,'2026-W43');assert.equal(c.patrolled_week,'2026-W44');
 assert.equal((await save({...c,patrolled_week:'2026-W45'})).status,200);
 const p=await (await fetch(api+'/points')).json();
-assert(p.points.filter(x=>x.category.includes('/Pichetare/')).every(x=>x.category.endsWith('/Finalizate')));
+const originalIds=JSON.parse(fs.readFileSync(new URL('../dist/data.json',import.meta.url))).features.filter(f=>f.category==='TTI (1)/Pichetare').map(f=>f.id);
+assert(p.points.filter(x=>originalIds.includes(x.id)).every(x=>x.category.endsWith('/Finalizate')));
 const id=crypto.randomUUID();const create=await fetch(api+'/points',{method:'POST',headers:{'X-TTI-Client':'web','Content-Type':'application/json'},body:JSON.stringify({id,latitude:46,longitude:24,category:'TTI (1)/Pichetare/Solicitate',name:'Test local',address:''})});assert.equal(create.status,201);
 console.log('PASS: operational migration, new status point, week-required validation, ISO year boundary, shared cable states, conflict protection, independent planned/patrolled weeks and manual corrections.');
