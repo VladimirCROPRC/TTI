@@ -19,3 +19,5 @@
 .cable-draw-toolbar{position:absolute;left:12px;right:60px;bottom:56px;z-index:1001;background:white;padding:12px;border-radius:8px;box-shadow:0 3px 18px #10273533;display:flex;flex-wrap:wrap;gap:8px;align-items:center}.cable-draw-toolbar[hidden]{display:none}.cable-draw-toolbar span{flex:1;min-width:180px}.cable-draw-toolbar button{padding:9px 12px}
 
 .section-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.section-actions button{padding:8px 10px}.section-actions button:last-child{color:#b42318}
+
+.import-point-symbol{display:block;width:14px;height:14px;margin:9px;border:2px solid white;border-radius:50%;box-shadow:0 0 0 1px #102735}

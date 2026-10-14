@@ -1,6 +1,6 @@
 function groupLayerControls(){
  const root=$('layers');
- for(const [name,prefix] of [['Cabluri','Cabluri/'],['Patrulare','Patrulare/'],['Pichetare','Pichetare/'],['Predări de amplasament','Predări de amplasament/'],['Tichete','Tichete/']]){
+ for(const [name,prefix] of [['Cabluri','Cabluri/'],['Patrulare','Patrulare/'],['Pichetare','Pichetare/'],['Predări de amplasament','Predări de amplasament/'],['Tichete','Tichete/'],['Importate','Importate/']]){
   const rows=[...root.querySelectorAll('.layer')].filter(row=>short(row.querySelector('input').dataset.key).startsWith(prefix));
   if(!rows.length)continue;
   const section=el('section',undefined,'layer-group');section.dataset.prefix=prefix;

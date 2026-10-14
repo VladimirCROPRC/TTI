@@ -1,7 +1,8 @@
 import manifest from './manifest.json' with {type:'json'};
+import {importRoutes,historyStatement} from './imports.mjs';
 const json=(value,status=200)=>Response.json(value,{status});
 const categories=new Set(manifest.categories),ids=new Set(manifest.ids);
-const validCategory=c=>categories.has(c)||(typeof c==='string'&&(/^TTI \(1\)\/Tichete\/[A-Za-z0-9][A-Za-z0-9_. -]{0,99}$/.test(c)||/^TTI \(1\)\/(?:Pichetare|Predari amplasament)\/(?:Solicitate|Programate|Pending|Finalizate)$/.test(c)));
+const validCategory=c=>categories.has(c)||(typeof c==='string'&&/^TTI \(1\)\/Importate\/[a-f0-9-]{36}$/.test(c))||(typeof c==='string'&&(/^TTI \(1\)\/Tichete\/[A-Za-z0-9][A-Za-z0-9_. -]{0,99}$/.test(c)||/^TTI \(1\)\/(?:Pichetare|Predari amplasament)\/(?:Solicitate|Programate|Pending|Finalizate)$/.test(c)));
 export function validWeek(value){
  if(typeof value!=='string'||!/^\d{4}-W\d{2}$/.test(value))return false;
  const year=Number(value.slice(0,4)),week=Number(value.slice(6));if(year<2000||year>2100||week<1||week>53)return false;
@@ -56,6 +57,7 @@ async function route(request,env){
  return new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'X-Content-Type-Options':'nosniff'}});
  }
  if(request.headers.get('X-TTI-Client')!=='web')return json({error:'Cerere nepermisă.'},403);
+ const imported=await importRoutes(request,env,path);if(imported)return imported;
  if(path==='/cables'&&request.method==='POST'){
  const b=await request.json();
  if(typeof b.id!=='string'||!/^[a-f0-9-]{36}$/.test(b.id)||typeof b.name!=='string'||!b.name.trim()||b.name.length>200||!Array.isArray(b.coordinates)||b.coordinates.length<2||b.coordinates.length>2000||b.coordinates.some(p=>!Array.isArray(p)||p.length!==2||!Number.isFinite(p[0])||Math.abs(p[0])>90||!Number.isFinite(p[1])||Math.abs(p[1])>180)||!b.coordinates.some(p=>p[0]!==b.coordinates[0][0]||p[1]!==b.coordinates[0][1])||!['Neprogramate','Patrulate','Patrulate - traseu diferit fata de documentatie','Programate pentru patrulare','Segmente documentate eronat'].includes(b.status)||(!['Neprogramate','Segmente documentate eronat'].includes(b.status)&&!validWeek(b.week)))return json({error:'Introdu numele, un traseu valid cu minimum două poziții și săptămâna stratului ales.'},400);
@@ -78,7 +80,8 @@ async function route(request,env){
  if(await env.DB.prepare('SELECT section_id FROM deleted_cable_sections WHERE section_id=?').bind(sectionId).first())return json({ok:true});
  const result=await env.DB.batch([
  env.DB.prepare('INSERT OR IGNORE INTO deleted_cable_sections(section_id) SELECT ? FROM cables WHERE id=? AND version=?').bind(sectionId,cableId,b.version),
- env.DB.prepare('UPDATE cables SET version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM deleted_cable_sections WHERE section_id=?)').bind(cableId,b.version,sectionId)
+ env.DB.prepare('UPDATE cables SET version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM deleted_cable_sections WHERE section_id=?)').bind(cableId,b.version,sectionId),
+ env.DB.prepare("UPDATE operation_history SET undone_at=CURRENT_TIMESTAMP WHERE kind='cable-section' AND json_extract(payload,'$.sectionId')=? AND EXISTS(SELECT 1 FROM deleted_cable_sections WHERE section_id=?)").bind(sectionId,sectionId)
  ]);
  if(!result[0].meta.changes)return json({error:'Traseul a fost modificat de alt utilizator. Reîncarcă datele.'},409);
  return json({ok:true});
@@ -91,7 +94,8 @@ async function route(request,env){
  const prior=await env.DB.prepare('SELECT * FROM cable_sections WHERE id=?').bind(b.id).first();if(prior){if(prior.cable_id!==cableId||prior.status!==b.status||prior.week!==b.week||prior.start_pos!==b.start_pos||prior.end_pos!==b.end_pos)return json({error:'Identificator reutilizat.'},409);return json(prior);}
  const inserted=await env.DB.batch([
  env.DB.prepare('INSERT INTO cable_sections(id,cable_id,status,start_pos,end_pos,week,created_at) SELECT ?,id,?,?,?,?,? FROM cables WHERE id=? AND version=?').bind(b.id,b.status,b.start_pos,b.end_pos,b.week,new Date().toISOString(),cableId,b.version),
- env.DB.prepare('UPDATE cables SET version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM cable_sections WHERE id=?)').bind(cableId,b.version,b.id)
+ env.DB.prepare('UPDATE cables SET version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM cable_sections WHERE id=?)').bind(cableId,b.version,b.id),
+ historyStatement(env,'cable-section','Mutare cablu · '+String(b.label||cableId).slice(0,200)+' · '+b.status,{id:cableId,sectionId:b.id,version:b.version+1},'EXISTS(SELECT 1 FROM cables WHERE id=? AND version=?) AND EXISTS(SELECT 1 FROM cable_sections WHERE id=?)',[cableId,b.version+1,b.id])
  ]);
  if(!inserted[0].meta.changes)return json({error:'Traseul a fost modificat de alt utilizator. Reîncarcă datele.'},409);
  return json(await env.DB.prepare('SELECT * FROM cable_sections WHERE id=?').bind(b.id).first(),201);
@@ -114,7 +118,7 @@ async function route(request,env){
  }
  const match=path.match(/^\/points\/([^/]+)(\/(?:photos|observations))?$/);if(!match)return json({error:'Punct inexistent.'},404);
  const id=match[1];
- const existing=await env.DB.prepare('SELECT id FROM points WHERE id=?').bind(id).first();if(!existing)return json({error:'Punct inexistent.'},404);
+ const existing=await env.DB.prepare('SELECT * FROM points WHERE id=?').bind(id).first();if(!existing)return json({error:'Punct inexistent.'},404);
  if(match[2]==='/photos'&&request.method==='DELETE'){
  const b=await request.json();if(typeof b.src!=='string')return json({error:'Fotografie invalidă.'},400);
  const upload=b.src.startsWith('/photos/')?await env.DB.prepare('SELECT id FROM photos WHERE point_id=? AND id=?').bind(id,b.src.slice(8)).first():null;
@@ -135,7 +139,9 @@ async function route(request,env){
  if(Number(request.headers.get('Content-Length'))>10*1024*1024)return json({error:'Fotografia trebuie să aibă maximum 10 MB.'},413);
  const bytes=new Uint8Array(await request.arrayBuffer());if(bytes.length>10*1024*1024)return json({error:'Fotografia trebuie să aibă maximum 10 MB.'},413);
  const type=imageType(bytes);if(!type)return json({error:'Folosește o fotografie JPEG, PNG sau WebP.'},415);
- const photoId=crypto.randomUUID(),key=id+'/'+photoId;
+ const uploadId=new URL(request.url).searchParams.get('uploadId');if(uploadId&&!/^[a-f0-9-]{36}$/.test(uploadId))return json({error:'Identificator foto invalid.'},400);
+ if(uploadId){const prior=await env.DB.prepare('SELECT id,point_id FROM photos WHERE id=?').bind(uploadId).first();if(prior)return prior.point_id===id?json({id:uploadId,src:'/photos/'+uploadId,caption:'Fotografie importată'}):json({error:'Identificator foto reutilizat.'},409);}
+ const photoId=uploadId||crypto.randomUUID(),key=id+'/'+photoId;
  await env.PHOTOS.put(key,bytes,{httpMetadata:{contentType:type}});
  try{await env.DB.prepare('INSERT INTO photos(id,point_id,object_key,caption) VALUES(?,?,?,?)').bind(photoId,id,key,'Fotografie adăugată · '+new Date().toLocaleDateString('ro-RO')).run();}catch(e){await env.PHOTOS.delete(key);throw e;}
  return json({id:photoId,src:'/photos/'+photoId},201);
@@ -143,7 +149,9 @@ async function route(request,env){
  if(!match[2]&&request.method==='PATCH'){
  const body=await request.json();
  if(!validCategory(body.category)||typeof body.notes!=='string'||body.notes.length>10000||typeof body.deleted!=='boolean'||!Number.isInteger(body.version))return json({error:'Date invalide.'},400);
- const result=await env.DB.prepare('UPDATE points SET category=?,notes=?,deleted=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=?').bind(body.category,body.notes,Number(body.deleted),id,body.version).run();
+ const statements=[env.DB.prepare('UPDATE points SET category=?,notes=?,deleted=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=?').bind(body.category,body.notes,Number(body.deleted),id,body.version)];
+ if(body.category!==existing.category&&!existing.deleted&&!body.deleted)statements.push(historyStatement(env,'point-layer','Mutare punct · '+String(existing.name||id).slice(0,200)+' · '+body.category,{id,before:existing.category,after:body.category,version:body.version+1},'EXISTS(SELECT 1 FROM points WHERE id=? AND version=? AND category=?)',[id,body.version+1,body.category]));
+ const result=(await env.DB.batch(statements))[0];
  if(!result.meta.changes)return json({error:'Punctul a fost modificat de alt utilizator. Reîncarcă datele înainte de salvare.'},409);
  return json(await env.DB.prepare('SELECT * FROM points WHERE id=?').bind(id).first());
  }

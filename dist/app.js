@@ -10,7 +10,7 @@ function matchesLocation(f,q){
 const $=id=>document.getElementById(id);
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 let map,data,base,selected,photoIndex=0;const groups=new Map(),records=new Map(),enabled=new Map();
-const short=name=>name.replace(/^TTI \(1\)\//,'').replace(/^Tikete(?=\/|$)/,'Tichete').replace(/^Predari amplasament(?=\/|$)/,'Predări de amplasament');
+const short=name=>name.startsWith('TTI (1)/Importate/')?'Importate/'+(TTI.importNames?.get(name.slice(18))||name.slice(18)):name.replace(/^TTI \(1\)\//,'').replace(/^Tikete(?=\/|$)/,'Tichete').replace(/^Predari amplasament(?=\/|$)/,'Predări de amplasament');
 function asset(path){return path.startsWith('files/')&&!path.includes('..')?path:null;}
 function image(path,alt){const n=el('img');n.src=TTI.photoUrl(asset(path)||path);n.alt=alt;n.loading='lazy';return n;}
 function toggleCategory(key,on){enabled.set(key,on);render();}
