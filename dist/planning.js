@@ -1,6 +1,6 @@
 const operationalStatuses=['Solicitate','Programate','Pending','Finalizate'];
-const cableStatuses=['Patrulate','Patrulate - traseu diferit fata de documentatie','Programate pentru patrulare','Neprogramate'];
-const cableColors={'Patrulate':'#23a455','Patrulate - traseu diferit fata de documentatie':'#facc15','Programate pentru patrulare':'#2677e8','Neprogramate':'#ff00ff'};
+const cableStatuses=['Patrulate','Patrulate - traseu diferit fata de documentatie','Programate pentru patrulare','Segmente documentate eronat','Neprogramate'];
+const cableColors={'Patrulate':'#23a455','Patrulate - traseu diferit fata de documentatie':'#facc15','Programate pentru patrulare':'#2677e8','Segmente documentate eronat':'#ef4444','Neprogramate':'#ff00ff'};
 function featureLayer(f){return f.type==='LineString'?'Cabluri/'+(f.cable?.status||'Neprogramate'):f.category;}
 function normalizeOperational(key){return ['TTI (1)/Pichetare','TTI (1)/Predari amplasament'].includes(key)?key+'/Finalizate':key;}
 function statusSymbol(key){const status=key.split('/').at(-1);return {Solicitate:'+',Programate:'▦',Pending:'⌛',Finalizate:'✓'}[status]||'';}
