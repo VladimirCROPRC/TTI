@@ -1,5 +1,7 @@
 # TTI · Harta rețelei
 
+Adresa aplicației: https://prevent.proconect.online/. Site-ul este găzduit în GitHub Pages, iar DNS-ul este administrat în Cloudflare: CNAME `prevent` către `vladimircroprc.github.io`, DNS only. GitHub gestionează certificatul HTTPS. Worker-ul permite originea HTTPS a domeniului nou și originea GitHub Pages; tokenul Mapbox permite și domeniul nou.
+
 ## Editare comună
 
 Patrularea și programarea se pot salva pe porțiuni de cablu. Din popup alege starea, săptămâna și „Selectează START și FINISH pe hartă”, apoi două poziții pe traseu. Pozițiile se fixează pe geometria cablului, inclusiv între vârfurile KML; porțiunea aleasă are previzualizare și marcaje. „Tot cablul” selectează întregul traseu. Înregistrările sunt comune, fiecare cu START, FINISH și săptămână. Restul traseului își păstrează starea, iar la suprapuneri cea mai recentă înregistrare determină culoarea zonei comune. Istoricul înregistrărilor rămâne în popup. Un cablu poate apărea în mai multe sublayere simultan; fiecare bifă controlează doar porțiunile sale din starea respectivă. Numărul din grupul Cabluri reprezintă trasee distincte, nu suma sublayerelor.
