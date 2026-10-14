@@ -1,0 +1,8 @@
+{
+  "name": "tti-api",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-14",
+  "vars": {"ALLOWED_ORIGINS": "https://vladimircroprc.github.io"},
+  "d1_databases": [{"binding":"DB","database_name":"tti-db","database_id":"6b297c05-674f-4139-9629-854ed85cb04f"}],
+  "r2_buckets": [{"binding":"PHOTOS","bucket_name":"tti-photos"}]
+}
