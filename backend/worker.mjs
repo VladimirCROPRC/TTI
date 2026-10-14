@@ -58,7 +58,7 @@ async function route(request,env){
  const sectionMatch=path.match(/^\/cables\/([^/]+)\/sections$/);
  if(sectionMatch&&request.method==='POST'){
  const b=await request.json(),cableId=sectionMatch[1],max=(manifest.cableVertexCounts?.[cableId]||0)-1;
- if(!['Patrulate','Programate pentru patrulare'].includes(b.status)||!validWeek(b.week)||!Number.isInteger(b.version)||typeof b.id!=='string'||!/^[a-f0-9-]{36}$/.test(b.id)||!Number.isFinite(b.start_pos)||!Number.isFinite(b.end_pos)||b.start_pos<0||b.end_pos<0||b.start_pos>max||b.end_pos>max||Math.abs(b.end_pos-b.start_pos)<0.000001)return json({error:'Selectează două poziții distincte pe traseu și săptămâna.'},400);
+ if(!['Patrulate','Patrulate - traseu diferit fata de documentatie','Programate pentru patrulare'].includes(b.status)||!validWeek(b.week)||!Number.isInteger(b.version)||typeof b.id!=='string'||!/^[a-f0-9-]{36}$/.test(b.id)||!Number.isFinite(b.start_pos)||!Number.isFinite(b.end_pos)||b.start_pos<0||b.end_pos<0||b.start_pos>max||b.end_pos>max||Math.abs(b.end_pos-b.start_pos)<0.000001)return json({error:'Selectează două poziții distincte pe traseu și săptămâna.'},400);
  const prior=await env.DB.prepare('SELECT * FROM cable_sections WHERE id=?').bind(b.id).first();if(prior){if(prior.cable_id!==cableId||prior.status!==b.status||prior.week!==b.week||prior.start_pos!==b.start_pos||prior.end_pos!==b.end_pos)return json({error:'Identificator reutilizat.'},409);return json(prior);}
  const inserted=await env.DB.batch([
  env.DB.prepare('INSERT INTO cable_sections(id,cable_id,status,start_pos,end_pos,week,created_at) SELECT ?,id,?,?,?,?,? FROM cables WHERE id=? AND version=?').bind(b.id,b.status,b.start_pos,b.end_pos,b.week,new Date().toISOString(),cableId,b.version),
@@ -70,7 +70,7 @@ async function route(request,env){
  const cableMatch=path.match(/^\/cables\/([^/]+)$/);
  if(cableMatch&&request.method==='PATCH'){
  const b=await request.json();
- if(!['Neprogramate','Patrulate','Programate pentru patrulare'].includes(b.status)||!Number.isInteger(b.version)||(b.scheduled_week!==null&&!validWeek(b.scheduled_week))||(b.patrolled_week!==null&&!validWeek(b.patrolled_week))||(b.status==='Programate pentru patrulare'&&!b.scheduled_week)||(b.status==='Patrulate'&&!b.patrolled_week))return json({error:'Selectează stratul și o săptămână validă (an și număr ISO).'},400);
+ if(!['Neprogramate','Patrulate','Patrulate - traseu diferit fata de documentatie','Programate pentru patrulare'].includes(b.status)||!Number.isInteger(b.version)||(b.scheduled_week!==null&&!validWeek(b.scheduled_week))||(b.patrolled_week!==null&&!validWeek(b.patrolled_week))||(b.status==='Programate pentru patrulare'&&!b.scheduled_week)||(['Patrulate','Patrulate - traseu diferit fata de documentatie'].includes(b.status)&&!b.patrolled_week))return json({error:'Selectează stratul și o săptămână validă (an și număr ISO).'},400);
  const result=await env.DB.prepare('UPDATE cables SET status=?,scheduled_week=?,patrolled_week=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=?').bind(b.status,b.scheduled_week,b.patrolled_week,cableMatch[1],b.version).run();
  if(!result.meta.changes)return json({error:'Traseul a fost modificat de alt utilizator sau nu există. Reîncarcă datele.'},409);
  return json(await env.DB.prepare('SELECT * FROM cables WHERE id=?').bind(cableMatch[1]).first());
