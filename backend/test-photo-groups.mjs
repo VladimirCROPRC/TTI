@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+const context={TTI:{}};vm.createContext(context);vm.runInContext(fs.readFileSync(new URL('../dist/photo-groups.js',import.meta.url),'utf8'),context);
+const p=(metres,id)=>({id,latitude:0,longitude:metres/6371000*180/Math.PI});
+assert.ok(Math.abs(context.photoDistance(p(0),p(15))-15)<1e-8);
+const groups=context.groupPhotos([p(0,'a'),p(10,'b'),p(20,'c'),p(30,'d'),{id:'unknown1',latitude:null,longitude:null},{id:'unknown2',latitude:null,longitude:null}]);
+assert.deepEqual(JSON.parse(JSON.stringify(groups.map(g=>g.map(x=>x.id)))),[['a','b'],['c','d'],['unknown1'],['unknown2']]);
+for(const group of groups)for(const photo of group)if(photo.latitude!==null)assert.ok(context.photoDistance(group[0],photo)<=15);
+assert.equal(context.groupPhotos([p(0),p(14.99)]).length,1);assert.equal(context.groupPhotos([p(0),p(15.01)]).length,2);
+console.log('Photo groups: 15 m boundary, non-chaining radius, missing GPS separation and all photos preserved.');

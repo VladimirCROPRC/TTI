@@ -17,3 +17,4 @@ jobs:
       - run: node backend/test-vpn.mjs
       - run: node --check dist/creation.js
       - run: node backend/test-photo-location.mjs
+      - run: node backend/test-photo-groups.mjs
