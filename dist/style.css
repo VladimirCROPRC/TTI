@@ -11,3 +11,5 @@
 .add-point{width:100%;padding:12px;border:0;border-radius:6px;background:#168d7b;color:white;margin-bottom:20px}.placing-point{cursor:crosshair}.photo-tile:first-child{grid-column:1/-1}.photo-tile>button:first-child{width:100%}.gallery .photo-tile>button:first-child img{height:105px}.gallery .photo-tile:first-child>button:first-child img{height:205px}.gallery .remove-photo{color:#b63a36;font-size:11px;padding:7px;border:1px solid #f0d4d1;border-radius:5px;margin-bottom:12px}.point-editor select{width:100%}
 
 [hidden]{display:none!important}
+
+.operational-marker{background:none;border:0}.status-marker,.layer-marker{position:relative;display:inline-block;flex:0 0 25px}.status-marker img{width:100%;height:100%}.status-symbol{position:absolute;right:-3px;bottom:-2px;background:white;border:1px solid #3d5260;border-radius:3px;min-width:15px;height:15px;text-align:center;color:#203743;font-size:11px;font-weight:800;line-height:13px}.layer-marker{width:25px;height:25px}.layer .layer-name{flex:1}.layer .layer-marker{flex:0 0 25px}.point-editor input[type=week]{margin-top:8px}

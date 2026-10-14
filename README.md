@@ -2,6 +2,10 @@
 
 ## Editare comună
 
+Pichetare și Predări de amplasament au sublayerele Solicitate, Programate, Pending și Finalizate. Punctele existente au fost migrate în Finalizate. Pictograma păstrează imaginea colorată originală și primește un simbol de stare (+, calendar, clepsidră sau bifă).
+
+Cablurile au stările Patrulate (verde), Programate pentru patrulare (albastru) și Neprogramate (roz). Starea și săptămânile se modifică din popup. Săptămânile se stochează separat în format ISO `YYYY-Www`: una pentru programare și alta pentru patrularea efectivă. Trecerea între stări păstrează ambele valori. Pentru programare/patrulare se cere săptămâna corespunzătoare. Traseele verzi existente au fost inițial încadrate ca Patrulate fără o săptămână inventată; aceasta poate fi completată manual. Migrarea `backend/cables.sql` și inițializarea `backend/cables-seed.sql` păstrează datele existente.
+
 „Adaugă punct” permite alegerea poziției prin click pe hartă, apoi alegerea stratului. Pentru „Tichete” se introduce numărul tichetului; sublayerul este creat automat sau reutilizat dacă numărul există deja. Numele și adresa sunt opționale. Punctele noi, coordonatele și categoriile lor se salvează în D1 și sunt comune tuturor utilizatorilor.
 
 Fiecare fotografie are butonul „Șterge fotografia”. Ștergerea este înregistrată în D1 și elimină fotografia din galeria comună, inclusiv pentru imaginile importate din KMZ. Fișierele originale din GitHub și obiectele R2 sunt păstrate pentru recuperare administrativă; acest control nu este o ștergere fizică a fișierului.

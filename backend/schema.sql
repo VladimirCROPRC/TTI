@@ -17,3 +17,8 @@ CREATE TABLE IF NOT EXISTS deleted_photos (
  point_id TEXT NOT NULL REFERENCES points(id), src TEXT NOT NULL,
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(point_id,src)
 );
+CREATE TABLE IF NOT EXISTS cables (
+ id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'Neprogramate',
+ scheduled_week TEXT, patrolled_week TEXT, version INTEGER NOT NULL DEFAULT 0,
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

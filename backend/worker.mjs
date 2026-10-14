@@ -1,7 +1,12 @@
 import manifest from './manifest.json' with {type:'json'};
 const json=(value,status=200)=>Response.json(value,{status});
 const categories=new Set(manifest.categories),ids=new Set(manifest.ids);
-const validCategory=c=>categories.has(c)||(typeof c==='string'&&/^TTI \(1\)\/Tichete\/[A-Za-z0-9][A-Za-z0-9_. -]{0,99}$/.test(c));
+const validCategory=c=>categories.has(c)||(typeof c==='string'&&(/^TTI \(1\)\/Tichete\/[A-Za-z0-9][A-Za-z0-9_. -]{0,99}$/.test(c)||/^TTI \(1\)\/(?:Pichetare|Predari amplasament)\/(?:Solicitate|Programate|Pending|Finalizate)$/.test(c)));
+export function validWeek(value){
+ if(typeof value!=='string'||!/^\d{4}-W\d{2}$/.test(value))return false;
+ const year=Number(value.slice(0,4)),week=Number(value.slice(6));if(year<2000||year>2100||week<1||week>53)return false;
+ const day=new Date(Date.UTC(year,0,1)).getUTCDay();return week<53||day===4||(day===3&&(year%4===0&&(year%100!==0||year%400===0)));
+}
 export function imageType(bytes){
  if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255)return 'image/jpeg';
  if([137,80,78,71,13,10,26,10].every((b,i)=>bytes[i]===b))return 'image/png';
@@ -20,6 +25,7 @@ async function route(request,env){
  if(request.method==='OPTIONS')return new Response(null,{status:204});
  const path=new URL(request.url).pathname;
  if(path==='/health')return json({ok:true});
+ if(path==='/cables'&&request.method==='GET')return json({cables:(await env.DB.prepare('SELECT * FROM cables').all()).results});
  if(request.method==='GET'&&path==='/points'){
  const {results}=await env.DB.prepare('SELECT * FROM points').all();
  const photos=await env.DB.prepare('SELECT id, point_id, caption FROM photos ORDER BY created_at,id').all();
@@ -35,6 +41,14 @@ async function route(request,env){
  return new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'X-Content-Type-Options':'nosniff'}});
  }
  if(request.headers.get('X-TTI-Client')!=='web')return json({error:'Cerere nepermisă.'},403);
+ const cableMatch=path.match(/^\/cables\/([^/]+)$/);
+ if(cableMatch&&request.method==='PATCH'){
+ const b=await request.json();
+ if(!['Neprogramate','Patrulate','Programate pentru patrulare'].includes(b.status)||!Number.isInteger(b.version)||(b.scheduled_week!==null&&!validWeek(b.scheduled_week))||(b.patrolled_week!==null&&!validWeek(b.patrolled_week))||(b.status==='Programate pentru patrulare'&&!b.scheduled_week)||(b.status==='Patrulate'&&!b.patrolled_week))return json({error:'Selectează stratul și o săptămână validă (an și număr ISO).'},400);
+ const result=await env.DB.prepare('UPDATE cables SET status=?,scheduled_week=?,patrolled_week=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=?').bind(b.status,b.scheduled_week,b.patrolled_week,cableMatch[1],b.version).run();
+ if(!result.meta.changes)return json({error:'Traseul a fost modificat de alt utilizator sau nu există. Reîncarcă datele.'},409);
+ return json(await env.DB.prepare('SELECT * FROM cables WHERE id=?').bind(cableMatch[1]).first());
+ }
  if(path==='/points'&&request.method==='POST'){
  const b=await request.json();
  if(typeof b.id!=='string'||!/^[a-f0-9-]{36}$/.test(b.id)||!Number.isFinite(b.latitude)||Math.abs(b.latitude)>90||!Number.isFinite(b.longitude)||Math.abs(b.longitude)>180||!validCategory(b.category)||typeof b.name!=='string'||b.name.length>200||typeof b.address!=='string'||b.address.length>500)return json({error:'Poziție sau strat invalid.'},400);

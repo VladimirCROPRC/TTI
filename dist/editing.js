@@ -8,16 +8,16 @@ window.TTI={
  async load(dataset){
   this.api=(window.TTI_CONFIG?.apiUrl||'').replace(/\/$/,'');
   this.all=dataset.features;for(const f of this.all){if(f.type==='Point'&&!this.styles.has(f.category))this.styles.set(f.category,f.style);f.originalPhotos=[...f.photos];}
-  if(!this.api)return;
+  this.preparePlanning(dataset);if(!this.api)return;
   try{await this.sync(dataset);}catch(e){this.offline=e.message;}
  },
  async sync(dataset){
-  const result=await this.request('/points');for(const p of result.points){if(p.latitude!==null&&p.latitude!==undefined&&!this.all.some(f=>f.id===p.id)){this.all.push({id:p.id,type:'Point',name:p.name||'Punct nou',description:p.address?'Adresa: '+p.address:'',coordinates:[p.latitude,p.longitude],category:p.category,style:this.styles.get(p.category)||this.ticketStyle(),photos:[],originalPhotos:[]});}if(!this.styles.has(p.category))this.styles.set(p.category,this.ticketStyle());}dataset.categories=[...new Set([...dataset.categories,...result.points.map(p=>p.category)])];this.states=new Map(result.points.map(p=>[p.id,p]));
+  const result=await this.request('/points');for(const p of result.points){p.category=normalizeOperational(p.category);if(p.latitude!==null&&p.latitude!==undefined&&!this.all.some(f=>f.id===p.id)){this.all.push({id:p.id,type:'Point',name:p.name||'Punct nou',description:p.address?'Adresa: '+p.address:'',coordinates:[p.latitude,p.longitude],category:p.category,style:this.styles.get(p.category)||this.ticketStyle(),photos:[],originalPhotos:[]});}if(!this.styles.has(p.category))this.styles.set(p.category,this.ticketStyle());}dataset.categories=[...new Set([...dataset.categories,...result.points.map(p=>p.category)])];this.states=new Map(result.points.map(p=>[p.id,p]));
   for(const f of this.all){const p=this.states.get(f.id);if(!p)continue;f.category=p.category;f.notes=p.notes;f.observations=p.observations||[];f.version=p.version;f.deleted=Boolean(p.deleted);f.photos=[...f.originalPhotos,...p.photos].filter(photo=>!(p.deletedPhotos||[]).includes(photo.src));f.style=this.styles.get(p.category)||f.style;}
-  dataset.features=this.all.filter(f=>!f.deleted);this.offline=null;
+  dataset.features=this.all.filter(f=>!f.deleted);await this.syncCables();this.offline=null;
  },
- async refresh(){await this.sync(data);rebuildLayers();for(const f of this.all){if(!records.has(f.id)&&f.type==='Point')records.set(f.id,pointMarker(f));}for(const f of data.features){const marker=records.get(f.id);if(f.type==='Point'&&marker){const size=32*(f.style.scale||1);marker.setIcon(L.icon({iconUrl:f.style.icon,iconSize:[size,size],iconAnchor:[size/2,size/2]}));}}render();this.updateCounts();updateLayerGroups();},
- updateCounts(){document.querySelectorAll('.layer').forEach(label=>{const key=label.querySelector('input').dataset.key;label.querySelector('small').textContent=data.features.filter(f=>(f.type==='LineString'?'Cabluri':f.category)===key).length;});},
+ async refresh(){await this.sync(data);rebuildLayers();for(const f of this.all){if(!records.has(f.id)&&f.type==='Point')records.set(f.id,pointMarker(f));}for(const f of data.features){const marker=records.get(f.id);if(f.type==='Point'&&marker){marker.setIcon(pointIcon(f));}else if(f.type==='LineString'&&marker){marker.setStyle({color:f.style.color});}}render();this.updateCounts();updateLayerGroups();},
+ updateCounts(){document.querySelectorAll('.layer').forEach(label=>{const key=label.querySelector('input').dataset.key;label.querySelector('small').textContent=data.features.filter(f=>featureLayer(f)===key).length;});},
  addEditor(f,content){
   if(f.type!=='Point')return;
   const box=el('section',undefined,'point-editor');box.append(el('h3','Editează punctul'));

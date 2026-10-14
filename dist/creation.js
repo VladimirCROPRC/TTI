@@ -1,11 +1,11 @@
-function pointMarker(f){const size=32*(f.style.scale||1);const marker=L.marker(f.coordinates,{title:f.name,icon:L.icon({iconUrl:f.style.icon,iconSize:[size,size],iconAnchor:[size/2,size/2]})});marker.bindTooltip(el('span',f.name));marker.on('click',()=>show(f));return marker;}
+function pointMarker(f){const size=32*(f.style.scale||1);const marker=L.marker(f.coordinates,{title:f.name,icon:pointIcon(f)});marker.bindTooltip(el('span',f.name));marker.on('click',()=>show(f));return marker;}
 function rebuildLayers(){
  const collapsed=new Set([...document.querySelectorAll('.layer-group')].filter(s=>s.querySelector('.layer-group-children').hidden).map(s=>s.dataset.prefix));
- $('layers').replaceChildren();for(const key of ['Cabluri',...data.categories]){
+ $('layers').replaceChildren();for(const key of [...cableStatuses.map(status=>'Cabluri/'+status),...data.categories]){
  if(!groups.has(key)){groups.set(key,L.featureGroup().addTo(map));enabled.set(key,true);}
- const features=data.features.filter(f=>(f.type==='LineString'?'Cabluri':f.category)===key),label=el('label',undefined,'layer'),check=el('input');check.type='checkbox';check.checked=enabled.get(key);check.dataset.key=key;check.onchange=()=>toggleCategory(key,check.checked);label.append(check);
- if(key==='Cabluri')label.append(el('i',undefined,'line-symbol'));else{const style=TTI.styles.get(key)||TTI.ticketStyle();if(style?.icon)label.append(image(style.icon,''));}
- label.append(el('span',short(key)),el('small',String(features.length)));$('layers').append(label);
+ const features=data.features.filter(f=>featureLayer(f)===key),label=el('label',undefined,'layer'),check=el('input');check.type='checkbox';check.checked=enabled.get(key);check.dataset.key=key;check.onchange=()=>toggleCategory(key,check.checked);label.append(check);
+ if(key.startsWith('Cabluri/')){const swatch=el('i',undefined,'line-symbol');swatch.style.background=cableColors[key.slice(8)];label.append(swatch);}else{const style=TTI.styles.get(key)||TTI.ticketStyle();if(style?.icon){const icon=el('span',undefined,'layer-marker');icon.append(image(style.icon,''));const symbol=statusSymbol(key);if(symbol)icon.append(el('b',symbol,'status-symbol'));label.append(icon);}}
+ label.append(el('span',short(key),'layer-name'),el('small',String(features.length)));$('layers').append(label);
  }groupLayerControls();for(const section of document.querySelectorAll('.layer-group'))if(collapsed.has(section.dataset.prefix))section.querySelector('.layer-group-heading button').click();
 }
 TTI.ticketStyle=function(){return [...this.styles.entries()].find(([key])=>short(key).startsWith('Tichete/'))?.[1]||[...this.styles.values()][0];};
