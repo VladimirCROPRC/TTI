@@ -1,6 +1,6 @@
 # TTI · Harta rețelei
 
-Adresa aplicației: https://prevent.proconect.online/. Site-ul este găzduit în GitHub Pages, iar DNS-ul este administrat în Cloudflare: CNAME `prevent` către `vladimircroprc.github.io`, DNS only. GitHub gestionează certificatul HTTPS. Worker-ul permite originea HTTPS a domeniului nou și originea GitHub Pages; tokenul Mapbox permite și domeniul nou.
+Adresa aplicației: https://prevent.proconect.online/. Site-ul și API-ul sunt găzduite în Cloudflare Worker `tti-api`. Fiecare cerere, inclusiv fotografiile și datele statice, este verificată înainte de servire: doar IP-ul public de ieșire WireGuard `92.180.22.209` este permis. `run_worker_first: true` este obligatoriu; dezactivarea lui ar expune fișierele statice. Fără `ALLOWED_CLIENT_IP`, accesul este refuzat. API-ul folosește `/api` pe același domeniu; adresa workers.dev este verificată identic. Repository-ul este privat, iar publicarea GitHub Pages este oprită. La schimbarea IP-ului VPN, actualizează `backend/wrangler.jsonc` și redeployează Worker-ul. Traficul utilizatorului către site trebuie să iasă efectiv prin VPN (inclusiv dacă dispozitivul folosește IPv6).
 
 ## Editare comună
 

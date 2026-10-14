@@ -14,6 +14,15 @@ export function imageType(bytes){
  return null;
 }
 export default {async fetch(request,env){
+ // Cloudflare replaces this header with the connecting client's address.
+ const clientIP=request.headers.get('CF-Connecting-IP');
+ if(!env.ALLOWED_CLIENT_IP||clientIP!==env.ALLOWED_CLIENT_IP)return new Response('Acces permis doar prin VPN-ul WireGuard.',{status:403,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});
+ const url=new URL(request.url);
+ if(url.pathname.startsWith('/api/')){url.pathname=url.pathname.slice(4);request=new Request(url,request);}
+ else if(env.ASSETS&&!/^\/(health|map-config|points|cables|photos)(\/|$)/.test(url.pathname)){
+  const response=await env.ASSETS.fetch(request);
+  const secured=new Response(response.body,response);secured.headers.set('Cache-Control','private, no-store');return secured;
+ }
  const origin=request.headers.get('Origin');const allowed=(env.ALLOWED_ORIGINS||'https://vladimircroprc.github.io').split(',');
  if(origin&&!allowed.includes(origin))return json({error:'Origine nepermisă.'},403);
  const headers={'Access-Control-Allow-Origin':origin||allowed[0],'Vary':'Origin','Access-Control-Allow-Methods':'GET,PATCH,POST,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type,X-TTI-Client','Cache-Control':'no-store'};
