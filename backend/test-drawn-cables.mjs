@@ -26,5 +26,11 @@ assert.equal(redState.sections[0].status,red.status);assert.equal(redState.secti
 assert.equal((await call('/api/cables/'+red.id+'/sections','POST',{id:crypto.randomUUID(),status:'Neprogramate',week:'',start_pos:0,end_pos:red.coordinates.length-1,version:redState.version})).status,201);
 const reset=(await(await call('/api/cables')).json()).cables.find(c=>c.id===red.id);
 assert.equal(reset.sections.at(-1).status,'Neprogramate');assert.equal(reset.sections.at(-1).start_pos,0);assert.equal(reset.sections.at(-1).end_pos,2);
+const removePath='/api/cables/'+red.id+'/sections/'+reset.sections.at(-1).id;
+assert.equal((await call('/api/cables/'+body.id+'/sections/'+reset.sections.at(-1).id,'DELETE',{version:reset.version})).status,404);
+assert.equal((await call(removePath,'DELETE',{version:reset.version-1})).status,409);
+assert.equal((await call(removePath,'DELETE',{version:reset.version})).status,200);
+assert.equal((await call(removePath,'DELETE',{version:reset.version})).status,200);
+const remaining=(await(await call('/api/cables')).json()).cables.find(c=>c.id===red.id);
+assert.equal(remaining.sections.length,1);assert.equal(remaining.sections[0].status,'Segmente documentate eronat');assert.equal(remaining.version,reset.version+1);
 console.log('Drawn cables: validation, persistence, retry, conflict, dynamic geometry and yellow partial patrol passed.');
-

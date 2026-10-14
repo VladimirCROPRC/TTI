@@ -37,7 +37,7 @@ async function route(request,env){
  if(path==='/health')return json({ok:true});
  if(path==='/map-config'&&request.method==='GET')return json({mapboxToken:env.MAPBOX_PUBLIC_TOKEN||''});
  if(path==='/cables'&&request.method==='GET'){
- const cables=(await env.DB.prepare('SELECT * FROM cables').all()).results,sections=(await env.DB.prepare('SELECT * FROM cable_sections ORDER BY sequence').all()).results;
+ const cables=(await env.DB.prepare('SELECT * FROM cables').all()).results,sections=(await env.DB.prepare('SELECT * FROM cable_sections WHERE NOT EXISTS(SELECT 1 FROM deleted_cable_sections d WHERE d.section_id=cable_sections.id) ORDER BY sequence').all()).results;
  const drawn=(await env.DB.prepare('SELECT * FROM drawn_cables').all()).results;
  return json({cables:cables.map(c=>{const geometry=drawn.find(d=>d.id===c.id);return {...c,...(geometry?{name:geometry.name,coordinates:JSON.parse(geometry.coordinates)}:{}),sections:sections.filter(s=>s.cable_id===c.id)};})});
  }
@@ -69,6 +69,20 @@ async function route(request,env){
  ]);return json({id:b.id},201);
  }
  const sectionMatch=path.match(/^\/cables\/([^/]+)\/sections$/);
+ const deleteSection=path.match(/^\/cables\/([^/]+)\/sections\/([a-f0-9-]{36})$/);
+ if(deleteSection&&request.method==='DELETE'){
+ const [,cableId,sectionId]=deleteSection,b=await request.json();
+ if(!Number.isInteger(b.version))return json({error:'Versiune invalidă.'},400);
+ const section=await env.DB.prepare('SELECT id FROM cable_sections WHERE id=? AND cable_id=?').bind(sectionId,cableId).first();
+ if(!section)return json({error:'Înregistrarea nu există pe acest cablu.'},404);
+ if(await env.DB.prepare('SELECT section_id FROM deleted_cable_sections WHERE section_id=?').bind(sectionId).first())return json({ok:true});
+ const result=await env.DB.batch([
+ env.DB.prepare('INSERT OR IGNORE INTO deleted_cable_sections(section_id) SELECT ? FROM cables WHERE id=? AND version=?').bind(sectionId,cableId,b.version),
+ env.DB.prepare('UPDATE cables SET version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM deleted_cable_sections WHERE section_id=?)').bind(cableId,b.version,sectionId)
+ ]);
+ if(!result[0].meta.changes)return json({error:'Traseul a fost modificat de alt utilizator. Reîncarcă datele.'},409);
+ return json({ok:true});
+ }
  if(sectionMatch&&request.method==='POST'){
  const b=await request.json(),cableId=sectionMatch[1];
  const drawn=manifest.cableVertexCounts?.[cableId]?null:await env.DB.prepare('SELECT coordinates FROM drawn_cables WHERE id=?').bind(cableId).first();

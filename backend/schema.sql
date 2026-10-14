@@ -32,3 +32,8 @@ CREATE TABLE IF NOT EXISTS cable_sections (
  start_pos REAL NOT NULL, end_pos REAL NOT NULL, week TEXT NOT NULL,
  created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS deleted_cable_sections (
+ section_id TEXT PRIMARY KEY REFERENCES cable_sections(id),
+ deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
