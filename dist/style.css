@@ -9,3 +9,5 @@
 .layer-group{margin:10px 0;border:1px solid #e1ebed;border-radius:7px;overflow:hidden}.layer-group-heading{display:flex;align-items:center;background:#f2f7f7;padding:11px 10px;gap:8px}.layer-group-heading label{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;font-size:12px}.layer-group-heading input{width:15px;height:15px;accent-color:#169e88}.layer-group-heading small{margin-left:auto;color:#7c919b}.layer-group-heading button{border:0;background:none;color:#38515d;font-size:18px}.layer-group-children{padding:0 10px 0 24px}.layer-group-children .layer:last-child{border:0}
 
 .add-point{width:100%;padding:12px;border:0;border-radius:6px;background:#168d7b;color:white;margin-bottom:20px}.placing-point{cursor:crosshair}.photo-tile:first-child{grid-column:1/-1}.photo-tile>button:first-child{width:100%}.gallery .photo-tile>button:first-child img{height:105px}.gallery .photo-tile:first-child>button:first-child img{height:205px}.gallery .remove-photo{color:#b63a36;font-size:11px;padding:7px;border:1px solid #f0d4d1;border-radius:5px;margin-bottom:12px}.point-editor select{width:100%}
+
+[hidden]{display:none!important}
