@@ -22,7 +22,8 @@ async function route(request,env){
  if(request.method==='GET'&&path==='/points'){
  const {results}=await env.DB.prepare('SELECT * FROM points').all();
  const photos=await env.DB.prepare('SELECT id, point_id, caption FROM photos ORDER BY created_at,id').all();
- return json({points:results.map(p=>({...p,photos:photos.results.filter(x=>x.point_id===p.id).map(x=>({id:x.id,src:'/photos/'+x.id,caption:x.caption}))}))});
+ const observations=await env.DB.prepare('SELECT * FROM observations ORDER BY created_at DESC,id').all();
+ return json({points:results.map(p=>({...p,observations:observations.results.filter(x=>x.point_id===p.id),photos:photos.results.filter(x=>x.point_id===p.id).map(x=>({id:x.id,src:'/photos/'+x.id,caption:x.caption}))}))});
  }
  const photo=path.match(/^\/photos\/([a-f0-9-]{36})$/);
  if(photo&&request.method==='GET'){
@@ -32,9 +33,18 @@ async function route(request,env){
  return new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'X-Content-Type-Options':'nosniff'}});
  }
  if(request.headers.get('X-TTI-Client')!=='web')return json({error:'Cerere nepermisă.'},403);
- const match=path.match(/^\/points\/([^/]+)(\/photos)?$/);if(!match||!ids.has(match[1]))return json({error:'Punct inexistent.'},404);
+ const match=path.match(/^\/points\/([^/]+)(\/(?:photos|observations))?$/);if(!match||!ids.has(match[1]))return json({error:'Punct inexistent.'},404);
  const id=match[1];
- if(match[2]&&request.method==='POST'){
+ if(match[2]==='/observations'&&request.method==='POST'){
+ const body=await request.json();
+ if(typeof body.text!=='string'||!body.text.trim()||body.text.length>10000||typeof body.id!=='string'||!/^[a-f0-9-]{36}$/.test(body.id))return json({error:'Introdu o observație de maximum 10.000 de caractere.'},400);
+ const result=await env.DB.prepare('INSERT OR IGNORE INTO observations(id,point_id,text,created_at) SELECT ?,id,?,? FROM points WHERE id=? AND deleted=0').bind(body.id,body.text.trim(),new Date().toISOString(),id).run();
+ const row=await env.DB.prepare('SELECT * FROM observations WHERE id=? AND point_id=?').bind(body.id,id).first();
+ if(!row)return json({error:'Punctul a fost șters.'},409);
+ if(row.text!==body.text.trim())return json({error:'Identificator de observație reutilizat.'},409);
+ return json(row,result.meta.changes?201:200);
+ }
+ if(match[2]==='/photos'&&request.method==='POST'){
  const row=await env.DB.prepare('SELECT deleted FROM points WHERE id=?').bind(id).first();if(!row||row.deleted)return json({error:'Punctul a fost șters.'},409);
  if(Number(request.headers.get('Content-Length'))>10*1024*1024)return json({error:'Fotografia trebuie să aibă maximum 10 MB.'},413);
  const bytes=new Uint8Array(await request.arrayBuffer());if(bytes.length>10*1024*1024)return json({error:'Fotografia trebuie să aibă maximum 10 MB.'},413);

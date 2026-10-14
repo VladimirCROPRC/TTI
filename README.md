@@ -2,6 +2,8 @@
 
 ## Editare comună
 
+Observațiile sunt o listă cu înregistrări distincte, cele mai noi primele. „Adaugă observația” salvează textul și data/ora serverului, afișate în fusul Europe/Bucharest. Salvarea stratului nu adaugă și nu rescrie observațiile. Reîncercarea aceleiași cereri nu creează duplicate. Migrarea `backend/observations.sql` păstrează textele vechi și le marchează cu data ultimei actualizări a punctului, deoarece data originală a observației nu era stocată separat.
+
 În fereastra fiecărui punct poți salva observații, muta punctul pe alt strat, încărca fotografii JPEG/PNG/WebP (maximum 10 MB fiecare) și șterge punctul. Punctele șterse se restaurează din butonul „Puncte șterse”. Fotografiile originale rămân în repository; fotografiile noi sunt în Cloudflare R2. Observațiile, stratul și ștergerile se salvează în Cloudflare D1 prin Worker-ul `tti-api`.
 
 Nu există autentificare, conform cerinței: orice vizitator poate modifica datele comune. Ștergerea punctelor este reversibilă. Modificările simultane sunt respinse dacă versiunea punctului s-a schimbat; în acest caz încarcă ultima versiune înainte de salvare. Harta se sincronizează la 30 secunde când fereastra de editare este închisă și la revenirea în pagină. Textul introdus nu este executat ca HTML.

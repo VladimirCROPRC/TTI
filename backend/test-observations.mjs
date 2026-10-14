@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+const api='http://127.0.0.1:8787';
+const points=async()=> (await (await fetch(api+'/points')).json()).points;
+const p=(await points())[0];
+const add=(id,text)=>fetch(api+'/points/'+p.id+'/observations',{method:'POST',headers:{'X-TTI-Client':'web','Content-Type':'application/json'},body:JSON.stringify({id,text})});
+const id=crypto.randomUUID();const before=Date.now();
+const first=await add(id,'Prima observație');assert.equal(first.status,201);
+const saved=await first.json();assert(Date.parse(saved.created_at)>=before);assert.equal(saved.text,'Prima observație');
+assert.equal((await add(id,'Prima observație')).status,200);
+assert.equal((await add(id,'Alt text')).status,409);
+assert.equal((await add(crypto.randomUUID(),'   ')).status,400);
+const secondId=crypto.randomUUID();assert.equal((await add(secondId,'A doua observație')).status,201);
+const history=(await points()).find(x=>x.id===p.id).observations;
+assert.equal(history.filter(x=>x.id===id).length,1);
+assert(history.find(x=>x.id===secondId));assert.equal(history.find(x=>x.id===id).text,'Prima observație');
+assert(history.indexOf(history.find(x=>x.id===secondId))<history.indexOf(history.find(x=>x.id===id)));
+console.log('PASS: two dated observations preserved, newest first, server timestamp, retries without duplicates, empty text rejected.');

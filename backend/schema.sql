@@ -7,3 +7,8 @@ CREATE TABLE IF NOT EXISTS photos (
  id TEXT PRIMARY KEY, point_id TEXT NOT NULL REFERENCES points(id),
  object_key TEXT NOT NULL UNIQUE, caption TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS observations (
+ id TEXT PRIMARY KEY, point_id TEXT NOT NULL REFERENCES points(id),
+ text TEXT NOT NULL, created_at TEXT NOT NULL, legacy INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS observations_point_date ON observations(point_id,created_at);
