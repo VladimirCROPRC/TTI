@@ -8,7 +8,7 @@ window.TTI={
  async load(dataset){
   this.api=(window.TTI_CONFIG?.apiUrl||'').replace(/\/$/,'');
   this.all=dataset.features;for(const f of this.all){if(f.type==='Point'&&!this.styles.has(f.category))this.styles.set(f.category,f.style);f.originalPhotos=[...f.photos];}
-  this.preparePlanning(dataset);if(!this.api)return;
+  this.preparePlanning(dataset);this.ticketStyle();if(!this.api)return;
   try{await this.sync(dataset);}catch(e){this.offline=e.message;}
  },
  async sync(dataset){

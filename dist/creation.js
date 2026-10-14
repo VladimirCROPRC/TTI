@@ -8,7 +8,7 @@ function rebuildLayers(){
  label.append(el('span',short(key),'layer-name'),el('small',String(features.length)));$('layers').append(label);
  }groupLayerControls();for(const section of document.querySelectorAll('.layer-group'))if(collapsed.has(section.dataset.prefix))section.querySelector('.layer-group-heading button').click();
 }
-TTI.ticketStyle=function(){return [...this.styles.entries()].find(([key])=>short(key).startsWith('Tichete/'))?.[1]||[...this.styles.values()][0];};
+TTI.ticketStyle=function(){const style=[...this.styles.entries()].find(([key])=>short(key).startsWith('Tichete/'))?.[1]||[...this.styles.values()][0];for(const key of this.styles.keys())if(short(key).startsWith('Tichete/'))this.styles.set(key,style);return style;};
 TTI.deletePhoto=async function(f,p){if(this.busy||!confirm('Ștergi această fotografie din punct pentru toți utilizatorii?'))return;this.busy=true;try{await this.request('/points/'+f.id+'/photos',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({src:p.src})});if($('viewer').open)$('viewer').close();await this.refresh();show(f);}catch(e){alert(e.message);}finally{this.busy=false;}};
 TTI.setupCreation=function(){
  const button=el('button','＋ Adaugă punct','add-point');$('sidebar').insertBefore(button,$('sidebar').firstChild);
