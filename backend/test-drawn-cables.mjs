@@ -23,4 +23,8 @@ assert.equal((await call('/api/cables','POST',red)).status,201);
 assert.equal((await call('/api/cables/'+red.id+'/sections','POST',{...section,id:crypto.randomUUID(),status:red.status,week:'',version:0})).status,201);
 const redState=(await(await call('/api/cables')).json()).cables.find(c=>c.id===red.id);
 assert.equal(redState.sections[0].status,red.status);assert.equal(redState.sections[0].week,'');
+assert.equal((await call('/api/cables/'+red.id+'/sections','POST',{id:crypto.randomUUID(),status:'Neprogramate',week:'',start_pos:0,end_pos:red.coordinates.length-1,version:redState.version})).status,201);
+const reset=(await(await call('/api/cables')).json()).cables.find(c=>c.id===red.id);
+assert.equal(reset.sections.at(-1).status,'Neprogramate');assert.equal(reset.sections.at(-1).start_pos,0);assert.equal(reset.sections.at(-1).end_pos,2);
 console.log('Drawn cables: validation, persistence, retry, conflict, dynamic geometry and yellow partial patrol passed.');
+
