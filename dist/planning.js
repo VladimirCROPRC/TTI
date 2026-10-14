@@ -1,6 +1,6 @@
 const operationalStatuses=['Solicitate','Programate','Pending','Finalizate'];
 const cableStatuses=['Patrulate','Patrulate - traseu diferit fata de documentatie','Programate pentru patrulare','Segmente documentate eronat','Neprogramate'];
-const cableColors={'Patrulate':'#23a455','Patrulate - traseu diferit fata de documentatie':'#facc15','Programate pentru patrulare':'#2677e8','Segmente documentate eronat':'#ef4444','Neprogramate':'#ff00ff'};
+const cableColors={'Patrulate':'#23a455','Patrulate - traseu diferit fata de documentatie':'#23a455','Programate pentru patrulare':'#2677e8','Segmente documentate eronat':'#ef4444','Neprogramate':'#ff00ff'};
 function featureLayer(f){return f.type==='LineString'?'Cabluri/'+(f.cable?.status||'Neprogramate'):f.category;}
 function normalizeOperational(key){return ['TTI (1)/Pichetare','TTI (1)/Predari amplasament'].includes(key)?key+'/Finalizate':key;}
 function statusSymbol(key){const status=key.split('/').at(-1);return {Solicitate:'+',Programate:'▦',Pending:'⌛',Finalizate:'✓'}[status]||'';}
@@ -20,3 +20,5 @@ TTI.preparePlanning=function(dataset){
  for(const f of this.all){if(f.type==='Point')f.category=normalizeOperational(f.category);else{f.originalStyle={...f.style};f.cable={status:f.style.color==='#55ff7f'?'Patrulate':'Neprogramate',scheduled_week:null,patrolled_week:null,version:0};}}
 };
 TTI.syncCables=async function(){const result=await this.request('/cables');for(const state of result.cables){let f=this.all.find(f=>f.id===state.id&&f.type==='LineString');if(!f&&state.coordinates){f={id:state.id,type:'LineString',name:state.name,description:'Cablu desenat pe hartă',category:'Cabluri',coordinates:state.coordinates,photos:[],originalStyle:{width:4,opacity:1}};this.all.push(f);}if(f){f.cable=state;f.style={...f.originalStyle,color:cableColors[state.status]};}}data.features=this.all.filter(f=>!f.deleted);};
+
+function cableStroke(status){return {color:cableColors[status],dashArray:status==='Patrulate - traseu diferit fata de documentatie'?'1 9':null,lineCap:'round'};}
