@@ -23,7 +23,10 @@ window.TTI={
   const box=el('section',undefined,'point-editor');box.append(el('h3','Editează punctul'));
   if(!this.api||this.offline){box.append(el('p',this.offline?'Salvarea comună este momentan indisponibilă. '+this.offline:'Salvarea comună nu este încă configurată.'));const retry=el('button','Reîncarcă datele');retry.onclick=async()=>{try{await this.refresh();show(f);}catch(e){alert(e.message);}};box.append(retry);content.insertBefore(box,content.querySelector('h3'));return;}
   const noteLabel=el('label','Observații');const notes=el('textarea');notes.value='';notes.maxLength=10000;notes.rows=4;notes.placeholder='Adaugă observații despre punct…';noteLabel.append(notes);
-  const layerLabel=el('label','Strat');const select=el('select');data.categories.forEach(key=>{const option=el('option',short(key));option.value=key;option.selected=f.category===key;select.append(option);});layerLabel.append(select);
+  const layerLabel=el('label','Strat');const select=el('select');
+  const group=['TTI (1)/Pichetare','TTI (1)/Predari amplasament'].find(root=>f.category===root||f.category.startsWith(root+'/'));
+  const choices=group?operationalStatuses.map(status=>group+'/'+status):data.categories;
+  choices.forEach(key=>{const option=el('option',group?key.split('/').at(-1):short(key));option.value=key;option.selected=f.category===key;select.append(option);});layerLabel.append(select);
   const msg=el('p','Modificările sunt comune tuturor utilizatorilor.','save-status');msg.setAttribute('role','status');
   const save=el('button','Salvează stratul','save-point');
   const perform=async(fn)=>{if(this.busy)return;this.busy=true;box.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=true);try{await fn();}catch(e){msg.textContent=e.message;if(e.message.includes('alt utilizator')){const retry=el('button','Încarcă ultima versiune');retry.onclick=async()=>{await this.refresh();show(f);};box.append(retry);}}finally{this.busy=false;box.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=false);}};
