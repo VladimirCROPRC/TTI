@@ -21,4 +21,4 @@ TTI.preparePlanning=function(dataset){
 };
 TTI.syncCables=async function(){const result=await this.request('/cables');for(const state of result.cables){let f=this.all.find(f=>f.id===state.id&&f.type==='LineString');if(!f&&state.coordinates){f={id:state.id,type:'LineString',name:state.name,description:'Cablu desenat pe hartă',category:'Cabluri',coordinates:state.coordinates,photos:[],originalStyle:{width:4,opacity:1}};this.all.push(f);}if(f){f.cable=state;f.style={...f.originalStyle,color:cableColors[state.status]};}}data.features=this.all.filter(f=>!f.deleted);};
 
-function cableStroke(status){return {color:cableColors[status],dashArray:status==='Patrulate - traseu diferit fata de documentatie'?'1 9':null,lineCap:'round'};}
+function cableStroke(status){return {color:cableColors[status],dashArray:['Patrulate - traseu diferit fata de documentatie','Segmente documentate eronat'].includes(status)?'1 9':null,lineCap:'round'};}
