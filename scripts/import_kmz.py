@@ -70,6 +70,8 @@ def run(source):
             items.append(dict(base,id=f'{idx}-{len(items)}',type=typ,coordinates=coords[0] if typ=='Point' else coords)); found=True
         if not found: unsupported.append(base['name'])
     result={'categories':categories,'features':items,'unsupported':unsupported}
-    (dest/'data.json').write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
+    serialized=json.dumps(result,ensure_ascii=False)
+    (dest/'data.json').write_text(serialized,encoding='utf-8')
+    (dest/'data.js').write_text('window.TTI_DATA = '+serialized+';\n',encoding='utf-8')
     print(json.dumps({'points':sum(f['type']=='Point' for f in items),'cables':sum(f['type']=='LineString' for f in items),'photos':sum(len(f['photos']) for f in items),'categories':categories,'unsupported':unsupported},ensure_ascii=False))
 if __name__=='__main__': run(sys.argv[1])

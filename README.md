@@ -6,7 +6,7 @@ Date inițiale: 37 puncte, 42 trasee, 148 fotografii, 6 categorii. Fișierele fo
 
 ## Pornire
 
-Instalează Node.js, apoi rulează `npm start` în directorul proiectului. Deschide http://127.0.0.1:4173. Nu există dependențe npm. Leaflet 1.9.4 este inclus local. Hărțile de bază necesită internet.
+Deschide direct `dist/index.html` în browser. Datele sunt incluse în `data.js`, astfel încât funcționează și prin `file://`, fără server local. Alternativ, instalează Node.js și rulează `npm start` în directorul proiectului, apoi deschide http://127.0.0.1:4173. Nu există dependențe npm. Leaflet 1.9.4 este inclus local. Hărțile de bază necesită internet.
 
 ## Reimport
 
