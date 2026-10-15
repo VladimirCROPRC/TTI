@@ -39,7 +39,7 @@ async function route(request,env){
  if(path==='/health')return json({ok:true});
  if(path==='/map-config'&&request.method==='GET')return json({mapboxToken:env.MAPBOX_PUBLIC_TOKEN||''});
  if(path==='/cables'&&request.method==='GET'){
- const cables=(await env.DB.prepare('SELECT * FROM cables').all()).results,sections=(await env.DB.prepare('SELECT * FROM cable_sections WHERE NOT EXISTS(SELECT 1 FROM deleted_cable_sections d WHERE d.section_id=cable_sections.id) ORDER BY sequence').all()).results;
+ const cables=(await env.DB.prepare('SELECT c.*, CASE WHEN d.cable_id IS NULL THEN 0 ELSE 1 END AS deleted,d.deleted_at FROM cables c LEFT JOIN deleted_cables d ON d.cable_id=c.id').all()).results,sections=(await env.DB.prepare('SELECT * FROM cable_sections WHERE NOT EXISTS(SELECT 1 FROM deleted_cable_sections d WHERE d.section_id=cable_sections.id) ORDER BY sequence').all()).results;
  const drawn=(await env.DB.prepare('SELECT * FROM drawn_cables').all()).results;
  return json({cables:cables.map(c=>{const geometry=drawn.find(d=>d.id===c.id);return {...c,...(geometry?{name:geometry.name,coordinates:JSON.parse(geometry.coordinates)}:{}),sections:sections.filter(s=>s.cable_id===c.id)};})});
  }
@@ -58,6 +58,20 @@ async function route(request,env){
  return new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'X-Content-Type-Options':'nosniff'}});
  }
  if(request.headers.get('X-TTI-Client')!=='web')return json({error:'Cerere nepermisă.'},403);
+ const visibility=path.match(/^\/cables\/([^/]+)\/visibility$/);
+ if(visibility&&request.method==='PATCH'){
+  const b=await request.json(),id=visibility[1];if(typeof b.deleted!=='boolean'||!Number.isInteger(b.version)||b.version<0)return json({error:'Date invalide.'},400);
+  const current=await env.DB.prepare('SELECT c.version, CASE WHEN d.cable_id IS NULL THEN 0 ELSE 1 END AS deleted FROM cables c LEFT JOIN deleted_cables d ON d.cable_id=c.id WHERE c.id=?').bind(id).first();
+  if(!current)return json({error:'Cablul nu există.'},404);
+  if(current.version!==b.version)return json({error:'Cablul a fost modificat de alt utilizator. Reîncarcă datele.'},409);
+  if(Boolean(current.deleted)===b.deleted)return json({ok:true});
+  const mutation=b.deleted?env.DB.prepare('INSERT OR IGNORE INTO deleted_cables(cable_id) SELECT id FROM cables WHERE id=? AND version=?').bind(id,b.version):env.DB.prepare('DELETE FROM deleted_cables WHERE cable_id=? AND EXISTS(SELECT 1 FROM cables WHERE id=? AND version=?)').bind(id,id,b.version);
+  const result=await env.DB.batch([mutation,env.DB.prepare('UPDATE cables SET version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=? AND changes()>0').bind(id,b.version)]);
+  if(!result[0].meta.changes)return json({error:'Cablul a fost modificat de alt utilizator. Reîncarcă datele.'},409);
+  return json({ok:true});
+ }
+ const cableMutation=path.match(/^\/cables\/([^/]+)(?:\/sections(?:\/[^/]+)?)?$/);
+ if(cableMutation&&await env.DB.prepare('SELECT cable_id FROM deleted_cables WHERE cable_id=?').bind(cableMutation[1]).first())return json({error:'Cablul este șters. Restaurează-l înainte de modificare.'},409);
  if(path==='/photo-location'&&request.method==='POST')return photoLocation(request,env,imageType);
  const imported=await importRoutes(request,env,path);if(imported)return imported;
  if(path==='/cables'&&request.method==='POST'){

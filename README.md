@@ -61,3 +61,7 @@ Mapbox Satellite primește tokenul public din endpoint-ul /map-config al backend
 ## Instalare PWA
 
 Aplicația are manifest cu display standalone, pictograme 192/512 și pictogramă Apple 180, plus butonul „Instalează aplicația”. În Chrome/Edge se folosește dialogul nativ de instalare când este disponibil; altfel butonul oferă instrucțiuni. Pe macOS Sonoma 14+ Safari: File → Add to Dock. Se instalează o singură adresă (recomandat tti.proconect.online); fiecare origine are propria instalare. Service worker-ul folosește exclusiv rețeaua și nu stochează offline datele, fotografiile sau tile-urile. Toate cererile ajung la verificarea VPN din Worker; fără internet se afișează un ecran simplu de reconectare. Instalarea pe dispozitiv se confirmă de utilizator în browser.
+
+## Ștergere cablu
+
+În panoul cablului selectat, „Șterge cablul” ascunde întregul traseu pentru toți utilizatorii după confirmare. Geometria, săptămânile și porțiunile se păstrează; „Cabluri șterse” permite restaurarea. Versiunile împiedică ștergerea sau restaurarea peste modificări simultane. Cablurile șterse nu pot primi mutări/porțiuni noi înainte de restaurare. Înainte de deploy se aplică migrarea aditivă `backend/deleted-cables.sql`; nu se șterg rândurile originale.

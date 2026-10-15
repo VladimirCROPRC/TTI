@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS deleted_cables (
+ cable_id TEXT PRIMARY KEY REFERENCES cables(id),
+ deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

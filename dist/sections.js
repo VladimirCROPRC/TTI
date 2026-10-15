@@ -22,5 +22,5 @@ TTI.addCableEditor=function(f,content){
  const save=el('button','Salvează porțiunea','save-point');save.onclick=async()=>{if(this.busy||!week.reportValidity())return;if(!cableStatuses.includes(select.value)){message.textContent='Selectează stratul destinație.';return;}if(!whole.checked&&positions.length!==2){message.textContent='Selectează START și FINISH pe hartă sau bifează Tot cablul.';return;}
  this.busy=true;save.disabled=true;try{const bounds=whole.checked?[0,f.coordinates.length-1]:positions;pendingId=pendingId||crypto.randomUUID();await this.request('/cables/'+f.id+'/sections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:pendingId,label:f.name,status:select.value,week:week.required?week.value:'',start_pos:bounds[0],end_pos:bounds[1],version:f.cable.version})});
  cleanup();await this.refresh();enabled.set('Cabluri/'+select.value,true);render();show(f);}catch(error){message.textContent=error.message;const reload=el('button','Reîncarcă traseul');reload.onclick=async()=>{cleanup();await this.refresh();show(f);};block.append(reload);}finally{this.busy=false;save.disabled=false;}};
- block.append(layerLabel,weekLabelNode,wholeLabel,pick,range,save,message);content.append(block);
+ block.append(layerLabel,weekLabelNode,wholeLabel,pick,range,save,message);this.addCableDeleteButton(f,block);content.append(block);
 };
