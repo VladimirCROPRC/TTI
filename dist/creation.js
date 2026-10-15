@@ -1,4 +1,4 @@
-function pointMarker(f){const size=32*(f.style.scale||1);const marker=L.marker(f.coordinates,{title:f.name,icon:pointIcon(f)});marker.bindTooltip(el('span',f.name));marker.on('click',()=>show(f));return marker;}
+function pointMarker(f){const size=32*(f.style.scale||1);const marker=L.marker(f.coordinates,{title:f.name,icon:pointIcon(f)});marker.bindTooltip(el('span',f.name));marker.on('click',()=>TTI.mergePicking?TTI.toggleMergePoint(f):show(f));return marker;}
 function rebuildLayers(){
  const collapsed=new Set([...document.querySelectorAll('.layer-group')].filter(s=>s.querySelector('.layer-group-children').hidden).map(s=>s.dataset.prefix));
  $('layers').replaceChildren();for(const key of [...cableStatuses.map(status=>'Cabluri/'+status),...data.categories]){

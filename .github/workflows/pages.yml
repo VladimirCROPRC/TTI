@@ -20,3 +20,5 @@ jobs:
       - run: node backend/test-photo-groups.mjs
       - run: node --check dist/pwa.js
       - run: node backend/test-pwa.mjs
+      - run: node --check dist/point-merge.js
+      - run: node --check backend/point-merge.mjs

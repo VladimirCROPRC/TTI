@@ -1,6 +1,7 @@
 import manifest from './manifest.json' with {type:'json'};
 import {importRoutes,historyStatement} from './imports.mjs';
 import {photoLocation} from './photo-location.mjs';
+import {mergeRoutes} from './point-merge.mjs';
 const json=(value,status=200)=>Response.json(value,{status});
 const categories=new Set(manifest.categories),ids=new Set(manifest.ids);
 const validCategory=c=>categories.has(c)||(typeof c==='string'&&/^TTI \(1\)\/Importate\/[a-f0-9-]{36}$/.test(c))||(typeof c==='string'&&(/^TTI \(1\)\/Tichete\/[A-Za-z0-9][A-Za-z0-9_. -]{0,99}$/.test(c)||/^TTI \(1\)\/(?:Pichetare|Predari amplasament)\/(?:Solicitate|Programate|Pending|Finalizate)$/.test(c)));
@@ -46,9 +47,10 @@ async function route(request,env){
  if(request.method==='GET'&&path==='/points'){
  const {results}=await env.DB.prepare('SELECT * FROM points').all();
  const photos=await env.DB.prepare('SELECT id, point_id, caption FROM photos ORDER BY created_at,id').all();
+ const mergedPhotos=await env.DB.prepare('SELECT point_id,src,caption FROM merged_point_photos').all();
  const observations=await env.DB.prepare('SELECT * FROM observations ORDER BY created_at DESC,id').all();
  const removed=await env.DB.prepare('SELECT point_id,src FROM deleted_photos').all();
- return json({points:results.map(p=>({...p,deletedPhotos:removed.results.filter(x=>x.point_id===p.id).map(x=>x.src),observations:observations.results.filter(x=>x.point_id===p.id),photos:photos.results.filter(x=>x.point_id===p.id&&!removed.results.some(d=>d.point_id===p.id&&d.src==='/photos/'+x.id)).map(x=>({id:x.id,src:'/photos/'+x.id,caption:x.caption}))}))});
+ return json({points:results.map(p=>({...p,deletedPhotos:removed.results.filter(x=>x.point_id===p.id).map(x=>x.src),observations:observations.results.filter(x=>x.point_id===p.id),photos:photos.results.filter(x=>x.point_id===p.id&&!removed.results.some(d=>d.point_id===p.id&&d.src==='/photos/'+x.id)).map(x=>({id:x.id,src:'/photos/'+x.id,caption:x.caption})).concat(mergedPhotos.results.filter(x=>x.point_id===p.id&&!removed.results.some(d=>d.point_id===p.id&&d.src===x.src)).map(x=>({src:x.src,caption:x.caption}))) }))});
  }
  const photo=path.match(/^\/photos\/([a-f0-9-]{36})$/);
  if(photo&&request.method==='GET'){
@@ -58,6 +60,7 @@ async function route(request,env){
  return new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'X-Content-Type-Options':'nosniff'}});
  }
  if(request.headers.get('X-TTI-Client')!=='web')return json({error:'Cerere nepermisă.'},403);
+ const merged=await mergeRoutes(request,env,path,manifest,validCategory);if(merged)return merged;
  const visibility=path.match(/^\/cables\/([^/]+)\/visibility$/);
  if(visibility&&request.method==='PATCH'){
   const b=await request.json(),id=visibility[1];if(typeof b.deleted!=='boolean'||!Number.isInteger(b.version)||b.version<0)return json({error:'Date invalide.'},400);
@@ -136,9 +139,11 @@ async function route(request,env){
  const id=match[1];
  const existing=await env.DB.prepare('SELECT * FROM points WHERE id=?').bind(id).first();if(!existing)return json({error:'Punct inexistent.'},404);
  if(match[2]==='/photos'&&request.method==='DELETE'){
+ if(existing.deleted)return json({error:'Punctul este șters.'},409);
  const b=await request.json();if(typeof b.src!=='string')return json({error:'Fotografie invalidă.'},400);
  const upload=b.src.startsWith('/photos/')?await env.DB.prepare('SELECT id FROM photos WHERE point_id=? AND id=?').bind(id,b.src.slice(8)).first():null;
- if(!upload&&!(manifest.originalPhotos?.[id]||[]).includes(b.src))return json({error:'Fotografia nu aparține punctului.'},404);
+ const linked=await env.DB.prepare('SELECT src FROM merged_point_photos WHERE point_id=? AND src=?').bind(id,b.src).first();
+ if(!upload&&!linked&&!(manifest.originalPhotos?.[id]||[]).includes(b.src))return json({error:'Fotografia nu aparține punctului.'},404);
  await env.DB.prepare('INSERT OR IGNORE INTO deleted_photos(point_id,src) VALUES(?,?)').bind(id,b.src).run();return json({ok:true});
  }
  if(match[2]==='/observations'&&request.method==='POST'){
@@ -159,7 +164,7 @@ async function route(request,env){
  if(uploadId){const prior=await env.DB.prepare('SELECT id,point_id FROM photos WHERE id=?').bind(uploadId).first();if(prior)return prior.point_id===id?json({id:uploadId,src:'/photos/'+uploadId,caption:'Fotografie importată'}):json({error:'Identificator foto reutilizat.'},409);}
  const photoId=uploadId||crypto.randomUUID(),key=id+'/'+photoId;
  await env.PHOTOS.put(key,bytes,{httpMetadata:{contentType:type}});
- try{await env.DB.prepare('INSERT INTO photos(id,point_id,object_key,caption) VALUES(?,?,?,?)').bind(photoId,id,key,'Fotografie adăugată · '+new Date().toLocaleDateString('ro-RO')).run();}catch(e){await env.PHOTOS.delete(key);throw e;}
+ try{const inserted=await env.DB.prepare('INSERT INTO photos(id,point_id,object_key,caption) SELECT ?,id,?,? FROM points WHERE id=? AND deleted=0').bind(photoId,key,'Fotografie adăugată · '+new Date().toLocaleDateString('ro-RO'),id).run();if(!inserted.meta.changes){await env.PHOTOS.delete(key);return json({error:'Punctul a fost șters sau unit între timp.'},409);}}catch(e){await env.PHOTOS.delete(key);throw e;}
  return json({id:photoId,src:'/photos/'+photoId},201);
  }
  if(!match[2]&&request.method==='PATCH'){

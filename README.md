@@ -65,3 +65,7 @@ Aplicația are manifest cu display standalone, pictograme 192/512 și pictogram�
 ## Ștergere cablu
 
 În panoul cablului selectat, „Șterge cablul” ascunde întregul traseu pentru toți utilizatorii după confirmare. Geometria, săptămânile și porțiunile se păstrează; „Cabluri șterse” permite restaurarea. Versiunile împiedică ștergerea sau restaurarea peste modificări simultane. Cablurile șterse nu pot primi mutări/porțiuni noi înainte de restaurare. Înainte de deploy se aplică migrarea aditivă `backend/deleted-cables.sql`; nu se șterg rândurile originale.
+
+## Unire puncte
+
+„Unește puncte” sau „Unește cu alte puncte” din popup activează selecția prin click pe 2–12 markere. Se alege punctul păstrat (numele/poziția sa) și stratul rezultat. Fotografiile vizibile și observațiile surselor sunt reunite, cu data originală a observațiilor; sursele sunt ascunse reversibil. Originalele R2/KMZ și sursele nu sunt șterse. Istoricul comun permite anularea unirii dacă versiunile și numărul înregistrărilor asociate nu s-au modificat. Salvarea este tranzacțională, cu ID idempotent și verificarea versiunilor/date asociate. Migrare înainte de deploy: `backend/point-merge.sql`.
