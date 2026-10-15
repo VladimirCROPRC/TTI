@@ -57,3 +57,7 @@ Publică directorul `dist` pe orice hosting static, inclusiv într-un subdirecto
 Designul actual folosește o interfață cartografică cu antet bleumarin și accente verzi. Site-ul de referință oroc.proconect.ro nu a putut fi accesat la implementare; potrivirea vizuală exactă rămâne de verificat.
 
 Mapbox Satellite primește tokenul public din endpoint-ul /map-config al backend-ului. Tokenul este configurat în Cloudflare ca MAPBOX_PUBLIC_TOKEN, fără a fi inclus în sursele GitHub. La mutarea site-ului pe un domeniu nou, adaugă domeniul în restricțiile URL ale tokenului Mapbox și în ALLOWED_ORIGINS ale backend-ului Cloudflare. Domeniul existent poate fi păstrat în perioada de tranziție.
+
+## Instalare PWA
+
+Aplicația are manifest cu display standalone, pictograme 192/512 și pictogramă Apple 180, plus butonul „Instalează aplicația”. În Chrome/Edge se folosește dialogul nativ de instalare când este disponibil; altfel butonul oferă instrucțiuni. Pe macOS Sonoma 14+ Safari: File → Add to Dock. Se instalează o singură adresă (recomandat tti.proconect.online); fiecare origine are propria instalare. Service worker-ul folosește exclusiv rețeaua și nu stochează offline datele, fotografiile sau tile-urile. Toate cererile ajung la verificarea VPN din Worker; fără internet se afișează un ecran simplu de reconectare. Instalarea pe dispozitiv se confirmă de utilizator în browser.

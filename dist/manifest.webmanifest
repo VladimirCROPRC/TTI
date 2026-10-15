@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "TTI - mentenanță preventivă",
+  "short_name": "TTI",
+  "description": "Harta rețelei și mentenanță preventivă. Acces prin VPN WireGuard.",
+  "lang": "ro",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#102735",
+  "theme_color": "#102735",
+  "icons": [
+    {"src":"icons/tti-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icons/tti-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}

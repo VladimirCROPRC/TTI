@@ -18,3 +18,5 @@ jobs:
       - run: node --check dist/creation.js
       - run: node backend/test-photo-location.mjs
       - run: node backend/test-photo-groups.mjs
+      - run: node --check dist/pwa.js
+      - run: node backend/test-pwa.mjs
