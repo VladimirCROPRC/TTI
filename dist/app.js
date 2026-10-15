@@ -11,7 +11,7 @@ const $=id=>document.getElementById(id);
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 let map,data,base,selected,photoIndex=0;const groups=new Map(),records=new Map(),enabled=new Map();
 const short=name=>name.startsWith('TTI (1)/Importate/')?'Importate/'+(TTI.importNames?.get(name.slice(18))||name.slice(18)):name.replace(/^TTI \(1\)\//,'').replace(/^Tikete(?=\/|$)/,'Tichete').replace(/^Predari amplasament(?=\/|$)/,'Predări de amplasament');
-function asset(path){return path.startsWith('files/')&&!path.includes('..')?path:null;}
+function asset(path){return typeof path==='string'&&path.startsWith('files/')&&!path.includes('..')?path:null;}
 function image(path,alt){const n=el('img');n.src=TTI.photoUrl(asset(path)||path);n.alt=alt;n.loading='lazy';return n;}
 function toggleCategory(key,on){enabled.set(key,on);render();}
 function show(f){if(TTI.cablePicking)return;TTI.cancelCableSelection();selected=f;$('details').hidden=false;const content=$('detail-content');content.replaceChildren(el('div',short(f.category),'detail-category'),el('h2',f.name,'detail-title'),el('p',f.description,'description'));
