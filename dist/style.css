@@ -20,4 +20,5 @@
 
 .section-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.section-actions button{padding:8px 10px}.section-actions button:last-child{color:#b42318}
 
-.import-point-symbol{display:block;width:14px;height:14px;margin:9px;border:2px solid white;border-radius:50%;box-shadow:0 0 0 1px #102735}
+.import-point-symbol{display:block;box-sizing:border-box;width:60%;height:60%;margin:20%;border:2px solid white;border-radius:50%;box-shadow:0 0 0 1px #102735}
+.status-marker .status-symbol{right:-2px;bottom:-2px;min-width:12px;height:12px;font-size:9px;line-height:10px}

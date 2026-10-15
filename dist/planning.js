@@ -6,7 +6,7 @@ function featureLayer(f){return f.type==='LineString'?cableLayer(f.cable?.status
 function normalizeOperational(key){return ['TTI (1)/Pichetare','TTI (1)/Predari amplasament'].includes(key)?key+'/Finalizate':key;}
 function statusSymbol(key){const status=key.split('/').at(-1);return {Solicitate:'+',Programate:'▦',Pending:'⌛',Finalizate:'✓'}[status]||'';}
 function pointIcon(f){
- const size=32*(f.style.scale||1),symbol=statusSymbol(f.category);
+ const size=Math.max(14,Math.min(30,22*(f.style.scale||1))),symbol=statusSymbol(f.category);
  if(!f.style.icon){const dot=el('span',undefined,'import-point-symbol');dot.style.background=f.style.color;return L.divIcon({html:dot,className:'import-point',iconSize:[size,size],iconAnchor:[size/2,size/2]});}
  if(!symbol)return L.icon({iconUrl:f.style.icon,iconSize:[size,size],iconAnchor:[size/2,size/2]});
  const node=el('div',undefined,'status-marker');node.append(image(f.style.icon,''),el('span',symbol,'status-symbol'));
