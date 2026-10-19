@@ -22,3 +22,5 @@ jobs:
       - run: node backend/test-pwa.mjs
       - run: node --check dist/point-merge.js
       - run: node --check backend/point-merge.mjs
+      - run: node --check dist/kmz-export.js
+      - run: node backend/test-kmz-export.mjs
