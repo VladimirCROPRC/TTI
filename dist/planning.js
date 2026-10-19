@@ -4,7 +4,7 @@ const cableColors={'Patrulate':'#23a455','Patrulate - traseu diferit fata de doc
 function cableLayer(status){return status.startsWith('Importate/')?'TTI (1)/'+status:'Cabluri/'+status;}
 function featureLayer(f){return f.type==='LineString'?cableLayer(f.cable?.status||'Neprogramate'):f.category;}
 function normalizeOperational(key){return ['TTI (1)/Pichetare','TTI (1)/Predari amplasament'].includes(key)?key+'/Finalizate':key;}
-function statusSymbol(key){const status=key.split('/').at(-1);return {Solicitate:'+',Programate:'▦',Pending:'⌛',Finalizate:'✓'}[status]||'';}
+function statusSymbol(key){const status=key.split('/').at(-1);return {Solicitate:'+',Programate:'▦',Pending:'⌛',Finalizate:'✓','OK - de urmarit':'◉'}[status]||'';}
 function pointIcon(f){
  const size=Math.max(14,Math.min(30,22*(f.style.scale||1))),symbol=statusSymbol(f.category);
  if(!f.style.icon){const dot=el('span',undefined,'import-point-symbol');dot.style.background=f.style.color;return L.divIcon({html:dot,className:'import-point',iconSize:[size,size],iconAnchor:[size/2,size/2]});}
@@ -14,6 +14,9 @@ function pointIcon(f){
 }
 function weekLabel(value){return value?`${value.slice(0,4)} · S${value.slice(6)}`:'Necompletată';}
 TTI.preparePlanning=function(dataset){
+ const follow='TTI (1)/Patrulare/OK - de urmarit',ok='TTI (1)/Patrulare/OK';
+ this.styles.set(follow,{...this.styles.get(ok)});
+ dataset.categories=[...new Set(dataset.categories.flatMap(key=>key===ok?[key,follow]:[key]).concat(follow))];
  for(const root of ['TTI (1)/Pichetare','TTI (1)/Predari amplasament']){
   const style=this.styles.get(root)||[...this.styles.entries()].find(([key])=>key.startsWith(root+'/'))?.[1];
   for(const status of operationalStatuses)this.styles.set(root+'/'+status,style);

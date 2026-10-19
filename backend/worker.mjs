@@ -3,7 +3,7 @@ import {importRoutes,historyStatement} from './imports.mjs';
 import {photoLocation} from './photo-location.mjs';
 import {mergeRoutes} from './point-merge.mjs';
 const json=(value,status=200)=>Response.json(value,{status});
-const categories=new Set(manifest.categories),ids=new Set(manifest.ids);
+const categories=new Set([...manifest.categories,'TTI (1)/Patrulare/OK - de urmarit']),ids=new Set(manifest.ids);
 const validCategory=c=>categories.has(c)||(typeof c==='string'&&/^TTI \(1\)\/Importate\/[a-f0-9-]{36}$/.test(c))||(typeof c==='string'&&(/^TTI \(1\)\/Tichete\/[A-Za-z0-9][A-Za-z0-9_. -]{0,99}$/.test(c)||/^TTI \(1\)\/(?:Pichetare|Predari amplasament)\/(?:Solicitate|Programate|Pending|Finalizate)$/.test(c)));
 export function validWeek(value){
  if(typeof value!=='string'||!/^\d{4}-W\d{2}$/.test(value))return false;
