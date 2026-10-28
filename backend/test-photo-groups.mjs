@@ -6,4 +6,8 @@ const groups=context.groupPhotos([p(0,'a'),p(10,'b'),p(20,'c'),p(30,'d'),{id:'un
 assert.deepEqual(JSON.parse(JSON.stringify(groups.map(g=>g.map(x=>x.id)))),[['a','b'],['c','d'],['unknown1'],['unknown2']]);
 for(const group of groups)for(const photo of group)if(photo.latitude!==null)assert.ok(context.photoDistance(group[0],photo)<=15);
 assert.equal(context.groupPhotos([p(0),p(14.99)]).length,1);assert.equal(context.groupPhotos([p(0),p(15.01)]).length,2);
+assert.equal(context.groupPhotos([p(0),p(10)],5).length,2);
+assert.equal(context.groupPhotos([p(0),p(10)],25).length,1);
+assert.equal(context.groupPhotos([p(0),p(0),p(.01)],0).length,2);
+for(const radius of [-1,NaN,Infinity,10001])assert.throws(()=>context.groupPhotos([p(0)],radius));
 console.log('Photo groups: 15 m boundary, non-chaining radius, missing GPS separation and all photos preserved.');
