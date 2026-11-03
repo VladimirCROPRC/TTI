@@ -76,6 +76,13 @@ function safePath(base, key) {
   return target;
 }
 
+function imageContentType(body) {
+  if (body[0] === 0xff && body[1] === 0xd8 && body[2] === 0xff) return 'image/jpeg';
+  if ([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((value, index) => body[index] === value)) return 'image/png';
+  if (body.subarray(0, 4).toString('ascii') === 'RIFF' && body.subarray(8, 12).toString('ascii') === 'WEBP') return 'image/webp';
+  return 'application/octet-stream';
+}
+
 const PHOTOS = {
   async get(key) {
     const file = safePath(photosRoot, key);
@@ -85,7 +92,7 @@ const PHOTOS = {
         readFile(file + '.metadata.json', 'utf8').catch(() => '{}'),
       ]);
       const metadata = JSON.parse(metadataText);
-      return { body, httpMetadata: { contentType: metadata.contentType || 'application/octet-stream' } };
+      return { body, httpMetadata: { contentType: metadata.contentType || imageContentType(body) } };
     } catch (error) {
       if (error?.code === 'ENOENT') return null;
       throw error;
