@@ -1,1 +1,12 @@
-{"name":"tti-map","version":"1.0.0","private":true,"scripts":{"dev":"node scripts/serve.mjs","start":"node scripts/serve.mjs","check":"node --check dist/app.js"}}
+{
+  "name": "tti-map",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "check": "node --check dist/app.js",
+    "start:local": "node local-server.mjs",
+    "check:local": "node --check local-server.mjs"
+  }
+}
